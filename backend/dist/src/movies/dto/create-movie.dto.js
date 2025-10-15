@@ -1,0 +1,79 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CreateMovieDto = void 0;
+const class_validator_1 = require("class-validator");
+const class_transformer_1 = require("class-transformer");
+class CreateMovieDto {
+    title;
+    overview;
+    posterPath;
+    releaseDate;
+    genreIds;
+    backdropPath;
+    originalLanguage;
+}
+exports.CreateMovieDto = CreateMovieDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], CreateMovieDto.prototype, "title", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateMovieDto.prototype, "overview", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateMovieDto.prototype, "posterPath", void 0);
+__decorate([
+    (0, class_validator_1.IsDateString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateMovieDto.prototype, "releaseDate", void 0);
+__decorate([
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsNumber)({}, { each: true }),
+    (0, class_transformer_1.Transform)(({ value }) => {
+        if (Array.isArray(value)) {
+            return value.map(id => Number(id)).filter(id => !isNaN(id) && id > 0);
+        }
+        if (typeof value === 'string') {
+            try {
+                const parsed = JSON.parse(value);
+                return Array.isArray(parsed)
+                    ? parsed.map(id => Number(id)).filter(id => !isNaN(id) && id > 0)
+                    : [Number(parsed)].filter(id => !isNaN(id) && id > 0);
+            }
+            catch (e) {
+                return value.split(',')
+                    .map(id => Number(id.trim()))
+                    .filter(id => !isNaN(id) && id > 0);
+            }
+        }
+        return [];
+    }),
+    __metadata("design:type", Array)
+], CreateMovieDto.prototype, "genreIds", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateMovieDto.prototype, "backdropPath", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateMovieDto.prototype, "originalLanguage", void 0);
+//# sourceMappingURL=create-movie.dto.js.map

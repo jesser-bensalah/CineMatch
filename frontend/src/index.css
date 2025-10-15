@@ -1,0 +1,602 @@
+@import "tailwindcss";
+
+/* Variables CSS personnalisées - Thème Bleu/Violet Premium */
+:root {
+  --ion-color-primary: #4f46e5;
+  --ion-color-primary-rgb: 79, 70, 229;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #3730a3;
+  --ion-color-primary-tint: #6366f1;
+
+  --ion-color-secondary: #8b5cf6;
+  --ion-color-secondary-rgb: 139, 92, 246;
+  --ion-color-secondary-contrast: #ffffff;
+  --ion-color-secondary-contrast-rgb: 255, 255, 255;
+  --ion-color-secondary-shade: #7c3aed;
+  --ion-color-secondary-tint: #a78bfa;
+
+  --ion-color-tertiary: #1e1b4b;
+  --ion-color-tertiary-rgb: 30, 27, 75;
+  --ion-color-tertiary-contrast: #ffffff;
+  --ion-color-tertiary-contrast-rgb: 255, 255, 255;
+  --ion-color-tertiary-shade: #0f0e23;
+  --ion-color-tertiary-tint: #312e81;
+}
+
+/* Styles globaux premium */
+.cinema-theme {
+  background: linear-gradient(135deg, #0f0e23 0%, #1e1b4b 50%, #312e81 100%);
+  min-height: 100vh;
+}
+
+/* En-tête premium */
+.premium-header {
+  background: linear-gradient(135deg, rgba(15, 14, 35, 0.98) 0%, rgba(30, 27, 75, 0.95) 100%);
+  backdrop-filter: blur(20px);
+  border-bottom: 3px solid;
+  border-image: linear-gradient(90deg, #4f46e5, #8b5cf6, #c4b5fd) 1;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* Logo et titre principal */
+.cinematch-logo {
+  font-family: 'Arial Black', sans-serif;
+  font-size: 2.5rem;
+  background: linear-gradient(135deg, #4f46e5 0%, #8b5cf6 50%, #c4b5fd 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  letter-spacing: -1px;
+}
+
+/* Navigation segments premium */
+.premium-segment {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  border-radius: 25px;
+  padding: 4px;
+  margin: 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.premium-segment-button {
+  --background: transparent;
+  --background-checked: linear-gradient(135deg, #4f46e5, #8b5cf6);
+  --color: rgba(255, 255, 255, 0.8);
+  --color-checked: #ffffff;
+  border-radius: 20px;
+  margin: 0 2px;
+  min-height: 44px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.premium-segment-button::part(native) {
+  border-radius: 20px;
+}
+
+.premium-segment-button.ion-activated {
+  background: linear-gradient(135deg, #4f46e5, #8b5cf6);
+  color: white;
+}
+
+/* Cartes films premium */
+.premium-movie-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.08) 100%);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  overflow: hidden;
+  position: relative;
+  background-clip: padding-box;
+  border-radius: 1.5rem;
+}
+
+.premium-movie-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 60%);
+  pointer-events: none;
+}
+
+.premium-movie-card:hover::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  animation: shine 1.2s ease;
+  pointer-events: none;
+}
+
+@keyframes shine {
+  0% {
+    transform: translateX(-100%) translateY(-100%);
+  }
+
+  100% {
+    transform: translateX(100%) translateY(100%);
+  }
+}
+
+.premium-movie-card:hover::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  transition: left 0.6s;
+}
+
+.premium-movie-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(79, 70, 229, 0.3);
+  border-color: rgba(139, 92, 246, 0.5);
+}
+
+/* Boutons premium */
+.premium-btn {
+  background: linear-gradient(135deg, #4f46e5 0%, #8b5cf6 100%);
+  border: none;
+  border-radius: 15px;
+  font-weight: 700;
+  color: #ffffff !important;
+  /* Blanc pour le texte du bouton */
+  padding: 16px 32px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 25px rgba(79, 70, 229, 0.4);
+}
+
+.premium-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s;
+}
+
+.premium-btn:hover::before {
+  left: 100%;
+}
+
+.premium-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(79, 70, 229, 0.5);
+}
+
+.premium-btn ion-button {
+  --color: #ffffff !important;
+  /* Blanc pour le texte du bouton */
+}
+
+/* Badges premium */
+.premium-badge {
+  background: linear-gradient(135deg, #4f46e5, #8b5cf6);
+  color: #ffffff;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+}
+
+/* Animation d'entrée personnalisée */
+.premium-fade-in {
+  animation: premiumFadeIn 0.8s ease-out;
+}
+
+@keyframes premiumFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Effet de particules cinéma */
+.cinema-particles::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    radial-gradient(2px 2px at 40px 60px, #8b5cf6 50%, transparent),
+    radial-gradient(2px 2px at 80px 120px, #4f46e5 50%, transparent),
+    radial-gradient(1px 1px at 160px 80px, #c4b5fd 50%, transparent);
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  opacity: 0.1;
+  animation: particlesFloat 25s linear infinite;
+}
+
+@keyframes particlesFloat {
+  from {
+    transform: translateY(0px);
+  }
+
+  to {
+    transform: translateY(-200px);
+  }
+}
+
+/* Inputs améliorés */
+.enhanced-input {
+  background-color: rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  color: black;
+  transition: all 0.3s ease;
+  width: 100%;
+  min-height: 48px;
+}
+
+.enhanced-input:focus-within {
+  border-color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.05);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+}
+
+/* Scrollbar personnalisée */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #4f46e5, #8b5cf6);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #3730a3, #7c3aed);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .cinematch-logo {
+    font-size: 2rem;
+  }
+
+  .premium-segment {
+    margin: 0 8px;
+  }
+}
+
+/* Override des styles Ionic */
+ion-toolbar.premium-header {
+  --background: transparent;
+}
+
+ion-segment.premium-segment {
+  --background: transparent;
+}
+
+ion-segment-button.premium-segment-button {
+  --background: transparent;
+  --background-checked: linear-gradient(135deg, #4f46e5, #8b5cf6);
+  --color: rgba(255, 255, 255, 0.8);
+  --color-checked: #ffffff;
+  --indicator-color: transparent;
+}
+
+/* Styles pour les textes gradientes */
+.text-gradient-blue {
+  background: linear-gradient(to right, #60A5FA, #3B82F6, #8B5CF6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: bold;
+}
+
+/* Section titles */
+.section-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  background: linear-gradient(135deg, #4f46e5 0%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Styles existants préservés */
+.fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.glass-effect {
+  backdrop-filter: blur(16px) saturate(180%);
+  background-color: rgba(255, 255, 255, 0.75);
+}
+
+.movie-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.movie-card:hover {
+  transform: translateY(-4px);
+}
+
+.favorite-btn,
+.details-btn {
+  transition: all 0.3s ease;
+}
+
+.favorite-btn:hover,
+.details-btn:hover {
+  transform: scale(1.1);
+}
+
+ion-tab-bar {
+  --background: white;
+  --border: 1px solid #e5e7eb;
+}
+
+ion-tab-button {
+  --color: #6b7280;
+  --color-selected: #3b82f6;
+}
+
+@keyframes heartBeat {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.2);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.favorite-btn:active {
+  animation: heartBeat 0.3s ease-in-out;
+}
+
+ion-modal {
+  --border-radius: 24px 24px 0 0;
+}
+
+ion-card {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+@media (min-width: 768px) {
+  .movie-card {
+    min-height: 380px;
+  }
+}
+
+/* Styles pour les segments de navigation */
+.premium-segment {
+  --background: rgba(30, 27, 75, 0.7);
+  --background-checked: #4f46e5;
+  --color: rgba(255, 255, 255, 0.7);
+  --color-checked: #ffffff;
+  --border-radius: 8px;
+  --padding: 4px;
+  margin: 8px 0;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  background: rgba(30, 27, 75, 0.7);
+  backdrop-filter: blur(10px);
+}
+
+.premium-segment-button {
+  --background: transparent;
+  --background-checked: #4f46e5;
+  --color: rgba(255, 255, 255, 0.7);
+  --color-checked: #ffffff;
+  --border-radius: 4px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  margin: 2px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+}
+
+/* Style pour le segment actif */
+.premium-segment-button.segment-button-checked {
+  --background: #4f46e5;
+  --color: #ffffff;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.4);
+}
+
+/* Style pour les segments inactifs */
+.premium-segment-button:not(.segment-button-checked) {
+  --background: transparent;
+  --color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Effet de survol */
+.premium-segment-button:hover:not(.segment-button-checked) {
+  --color: #ffffff;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Ajuster la couleur du texte pour les noms de films et informations */
+.premium-movie-card .text-white {
+  color: #4a5568 !important;
+  /* Gris foncé pour une visibilité accrue */
+}
+
+.premium-movie-card .text-gray-300 {
+  color: #718096 !important;
+  /* Gris moyen pour les informations secondaires */
+}
+
+.premium-movie-card h1,
+.premium-movie-card h2,
+.premium-movie-card h3 {
+  color: #2d3748 !important;
+  /* Gris très foncé pour les titres */
+}
+
+.movie-detail-modal .text-white {
+  color: #4a5568 !important;
+  /* Gris foncé pour le nom du film dans les détails */
+}
+
+.movie-detail-modal .text-gray-300 {
+  color: #718096 !important;
+  /* Gris moyen pour le synopsis */
+}
+
+.movie-detail-content .text-gray-300 {
+  color: #718096 !important;
+  /* Gris moyen pour le contenu des détails */
+}
+
+/* Rendre spécifiquement le texte VOIR DÉTAILS en blanc dans le bouton de la carte de film */
+.premium-movie-card .premium-btn {
+  color: #ffffff !important;
+  /* Blanc pour le texte du bouton */
+}
+
+.premium-movie-card .premium-btn ion-button {
+  --color: #ffffff !important;
+  /* Blanc pour le texte du bouton Ionic */
+}
+
+/* Rendre le texte du rating en blanc dans la carte de film */
+.premium-movie-card .premium-badge {
+  color: #ffffff !important;
+  /* Blanc pour le texte du rating */
+}
+
+/* Rendre le texte Filters en blanc dans le bouton de filtres avant de cliquer */
+.premium-btn[fill="outline"][size="small"] {
+  --color: #ffffff !important;
+  /* Blanc pour le texte du bouton Filters */
+}
+
+.premium-btn[fill="outline"][size="small"]:not(:hover) {
+  --color: #ffffff !important;
+  /* Blanc même avant de cliquer ou survoler */
+}
+
+/* Animation pour les icônes des statistiques */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.1);
+    opacity: 0.9;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2.5s infinite ease-in-out;
+}
+
+/* Effet de survol pour les cartes statistiques */
+.premium-movie-card:hover ion-icon {
+  transform: rotate(5deg) scale(1.2);
+  transition: transform 0.3s ease;
+}
+
+/* Animation bounce pour le bouton Ajouter un nouveau film */
+@keyframes bounce {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.animate-bounce {
+  animation: bounce 1.8s infinite ease-in-out;
+}
+
+/* Responsivité pour éviter le défilement horizontal */
+@media (max-width: 640px) {
+  .max-w-md {
+    width: 100%;
+    padding: 0 0.5rem;
+  }
+  .grid-cols-3 {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  .p-6 {
+    padding: 1rem;
+  }
+  .text-4xl {
+    font-size: 2rem;
+  }
+  .text-lg {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .w-20 {
+    width: 4.5rem;
+  }
+  .h-20 {
+    height: 4.5rem;
+  }
+  .text-3xl {
+    font-size: 1.75rem;
+  }
+  .mb-6 {
+    margin-bottom: 1.25rem;
+  }
+  .p-4 {
+    padding: 0.75rem;
+  }
+}

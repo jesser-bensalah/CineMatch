@@ -1,0 +1,74 @@
+import { FirebaseService } from '../shared/firebase.service';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { AddFavoriteDto } from './dto/add-favorite.dto';
+import { CreateMovieDto } from './dto/create-movie.dto';
+import { ConfigService } from '@nestjs/config';
+export interface MatchingUser {
+    userId: string;
+    nom: string;
+    prenom: string;
+    photoUrl: string;
+    similarity: number;
+    commonMovies: number;
+    totalFavorites: number;
+}
+export declare class MoviesService {
+    private firebaseService;
+    private configService;
+    private cloudinaryService;
+    private moviedbApiKey;
+    private moviedbBaseUrl;
+    constructor(firebaseService: FirebaseService, configService: ConfigService, cloudinaryService: CloudinaryService);
+    private makeMovieDbRequest;
+    searchMovies(query: string, page?: number): Promise<{
+        results: any;
+        total_pages: any;
+        total_results: any;
+    }>;
+    getPopularMovies(page?: number): Promise<{
+        results: any;
+        total_pages: any;
+    }>;
+    getMovieDetails(movieId: string): Promise<any>;
+    addToFavorites(userId: string, addFavoriteDto: AddFavoriteDto): Promise<{
+        movieId: string;
+        movieTitle: string;
+        moviePoster: string | undefined;
+        addedAt: string;
+    }>;
+    removeFromFavorites(userId: string, movieId: string): Promise<{
+        message: string;
+        movieId: string;
+    }>;
+    getUserFavorites(userId: string): Promise<any>;
+    createMovie(createMovieDto: CreateMovieDto, posterFile?: Express.Multer.File): Promise<{
+        genreIds: number[];
+        posterPath: string | undefined;
+        isActive: boolean;
+        createdAt: string;
+        updatedAt: string;
+        title: string;
+        overview?: string;
+        releaseDate?: string;
+        backdropPath?: string;
+        originalLanguage?: string;
+        id: string;
+    }>;
+    getAdminMovies(): Promise<any[]>;
+    findMatchingUsers(userId: string, threshold?: number): Promise<MatchingUser[]>;
+    getAllUsers(): Promise<{
+        id: any;
+        nom: any;
+        prenom: any;
+        email: any;
+        age: any;
+        photoUrl: any;
+        isActive: any;
+        favoritesCount: any;
+        createdAt: any;
+    }[]>;
+    toggleUserStatus(userId: string): Promise<{
+        message: string;
+        isActive: boolean;
+    }>;
+}
