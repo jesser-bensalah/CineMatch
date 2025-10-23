@@ -212,14 +212,17 @@ export const useMovies = (): UseMoviesReturn => {
 
   
   const loadMatchingUsers = async () => {
+    console.log('🔄 Loading matching users...');
     setLoading(true);
     try {
       const response = await moviesAPI.getMatchingUsers();
+      console.log('✅ Matching users loaded:', response.data);
+      console.log(`📊 Found ${response.data.length} matches`);
       setMatchingUsers(response.data);
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || 'Erreur lors du chargement des utilisateurs similaires';
       setError(errorMessage);
-      console.error('Error loading matching users:', err);
+      console.error('❌ Error loading matching users:', err);
     } finally {
       setLoading(false);
     }

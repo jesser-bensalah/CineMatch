@@ -200,8 +200,8 @@ export class MoviesService {
   }
 
   // Matching algorithm
-  // Dans la méthode findMatchingUsers, assurez-vous que l'admin est exclu
-  async findMatchingUsers(userId: string, threshold: number = 0.75): Promise<MatchingUser[]> {
+  // findMatchingUsers,
+  async findMatchingUsers(userId: string, threshold: number = 0.20): Promise<MatchingUser[]> {
     const currentUserDoc = await this.firebaseService.doc('users', userId).get();
 
     if (!currentUserDoc.exists) {
@@ -213,14 +213,17 @@ export class MoviesService {
       throw new NotFoundException('Utilisateur non trouvé');
     }
 
-    // Si c'est un admin, retourner un tableau vide (les admins n'ont pas de matches)
+    // les admins n'ont pas de matches
     if (currentUser.role === 'admin') {
-
+      console.log('⚠️ Admin user - no matches returned');
       return [];
     }
 
     const currentUserFavorites = currentUser.favorites || [];
     const currentUserMovieIds = new Set(currentUserFavorites.map((fav: any) => fav.movieId));
+    
+    console.log(`🔍 Finding matches for user ${userId}`);
+    console.log(`📊 Current user has ${currentUserFavorites.length} favorites:`, [...currentUserMovieIds]);
 
     const allUsers = await this.firebaseService.findAll('users', {
       field: 'isActive',
@@ -229,6 +232,8 @@ export class MoviesService {
     });
 
     const matchingUsers: MatchingUser[] = [];
+    
+    console.log(`👥 Found ${allUsers.length} active users to check`);
 
     for (const user of allUsers) {
       // Exclure l'utilisateur courant et les admins
@@ -244,8 +249,14 @@ export class MoviesService {
       const union = new Set([...currentUserMovieIds, ...userMovieIds]);
 
       const similarity = union.size > 0 ? intersection.size / union.size : 0;
+      
+      console.log(`👤 User ${user.prenom} ${user.nom}:`);
+      console.log(`   - Has ${userFavorites.length} favorites:`, [...userMovieIds]);
+      console.log(`   - Common movies: ${intersection.size}/${union.size}`);
+      console.log(`   - Similarity: ${Math.round(similarity * 100)}% (threshold: ${Math.round(threshold * 100)}%)`);
 
       if (similarity >= threshold) {
+        console.log(`   ✅ MATCH! Adding to results`);
         matchingUsers.push({
           userId: user.id,
           nom: user.nom,
@@ -255,9 +266,12 @@ export class MoviesService {
           commonMovies: intersection.size,
           totalFavorites: userFavorites.length
         });
+      } else {
+        console.log(`   ❌ Below threshold`);
       }
     }
 
+    console.log(`\n🎯 Total matches found: ${matchingUsers.length}`);
     return matchingUsers.sort((a, b) => b.similarity - a.similarity);
   }
 

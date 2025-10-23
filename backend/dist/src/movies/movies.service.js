@@ -165,7 +165,7 @@ let MoviesService = class MoviesService {
     async getAdminMovies() {
         return await this.firebaseService.findAll('movies');
     }
-    async findMatchingUsers(userId, threshold = 0.75) {
+    async findMatchingUsers(userId, threshold = 0.20) {
         const currentUserDoc = await this.firebaseService.doc('users', userId).get();
         if (!currentUserDoc.exists) {
             throw new common_1.NotFoundException('Utilisateur non trouvé');
@@ -175,16 +175,20 @@ let MoviesService = class MoviesService {
             throw new common_1.NotFoundException('Utilisateur non trouvé');
         }
         if (currentUser.role === 'admin') {
+            console.log('⚠️ Admin user - no matches returned');
             return [];
         }
         const currentUserFavorites = currentUser.favorites || [];
         const currentUserMovieIds = new Set(currentUserFavorites.map((fav) => fav.movieId));
+        console.log(`🔍 Finding matches for user ${userId}`);
+        console.log(`📊 Current user has ${currentUserFavorites.length} favorites:`, [...currentUserMovieIds]);
         const allUsers = await this.firebaseService.findAll('users', {
             field: 'isActive',
             operator: '==',
             value: true
         });
         const matchingUsers = [];
+        console.log(`👥 Found ${allUsers.length} active users to check`);
         for (const user of allUsers) {
             if (user.id === userId || user.role === 'admin')
                 continue;
@@ -193,7 +197,12 @@ let MoviesService = class MoviesService {
             const intersection = new Set([...currentUserMovieIds].filter(movieId => userMovieIds.has(movieId)));
             const union = new Set([...currentUserMovieIds, ...userMovieIds]);
             const similarity = union.size > 0 ? intersection.size / union.size : 0;
+            console.log(`👤 User ${user.prenom} ${user.nom}:`);
+            console.log(`   - Has ${userFavorites.length} favorites:`, [...userMovieIds]);
+            console.log(`   - Common movies: ${intersection.size}/${union.size}`);
+            console.log(`   - Similarity: ${Math.round(similarity * 100)}% (threshold: ${Math.round(threshold * 100)}%)`);
             if (similarity >= threshold) {
+                console.log(`   ✅ MATCH! Adding to results`);
                 matchingUsers.push({
                     userId: user.id,
                     nom: user.nom,
@@ -204,7 +213,11 @@ let MoviesService = class MoviesService {
                     totalFavorites: userFavorites.length
                 });
             }
+            else {
+                console.log(`   ❌ Below threshold`);
+            }
         }
+        console.log(`\n🎯 Total matches found: ${matchingUsers.length}`);
         return matchingUsers.sort((a, b) => b.similarity - a.similarity);
     }
     async getAllUsers() {
