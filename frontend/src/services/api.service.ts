@@ -175,8 +175,14 @@ export const adminAPI = {
   getMovies: () =>
     api.get<AdminMovie[]>('/movies/admin/list'),
 
-  updateMovie: (movieId: string, data: Partial<AdminMovie>) =>
-    api.patch(`/movies/admin/${movieId}`, data),
+  updateMovie: (movieId: string, data: FormData, config?: any) => {
+    // Don't set Content-Type header when sending FormData, let the browser set it with the correct boundary
+    const headers = config?.headers || {};
+    if (data instanceof FormData) {
+      delete headers['Content-Type'];
+    }
+    return api.patch(`/movies/admin/${movieId}`, data, { ...config, headers });
+  },
 
   deleteMovie: (movieId: string) =>
     api.delete(`/movies/admin/${movieId}`),

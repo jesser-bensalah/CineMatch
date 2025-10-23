@@ -45,6 +45,16 @@ let MoviesController = class MoviesController {
     async getAdminMovies() {
         return this.moviesService.getAdminMovies();
     }
+    async updateMovie(id, body, posterFile, req) {
+        let updateData = {};
+        if (body.movie) {
+            updateData = JSON.parse(body.movie);
+        }
+        else {
+            updateData = { ...body };
+        }
+        return this.moviesService.updateMovie(id, updateData, posterFile);
+    }
     async createMovie(createMovieDto, posterFile, req) {
         console.log(' Headers:', req.headers['content-type']);
         console.log(' Raw body:', req.body);
@@ -155,6 +165,19 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], MoviesController.prototype, "getAdminMovies", null);
+__decorate([
+    (0, common_1.UseGuards)(auth_guard_1.AdminGuard),
+    (0, common_1.Patch)('admin/:id'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('poster')),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.UploadedFile)()),
+    __param(3, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object, Object]),
+    __metadata("design:returntype", Promise)
+], MoviesController.prototype, "updateMovie", null);
 __decorate([
     (0, common_1.UseGuards)(auth_guard_1.AdminGuard),
     (0, common_1.Post)('admin/create'),

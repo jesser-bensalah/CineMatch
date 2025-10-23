@@ -27,7 +27,12 @@ export declare class MoviesController {
         total_results: any;
     }>;
     getMatchingUsers(req: Request): Promise<MatchingUser[]>;
-    getAdminMovies(): Promise<any[]>;
+    getAdminMovies(): Promise<{
+        id: string;
+    }[]>;
+    updateMovie(id: string, body: any, posterFile: Express.Multer.File, req: Request): Promise<{
+        id: string;
+    }>;
     createMovie(createMovieDto: CreateMovieDto, posterFile: Express.Multer.File, req: Request): Promise<{
         genreIds: number[];
         posterPath: string | undefined;

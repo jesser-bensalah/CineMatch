@@ -3,6 +3,7 @@ import {
   Post,
   Body,
   Get,
+  Patch,
   Query,
   UseGuards,
   Request as NestRequest,
@@ -75,6 +76,29 @@ export class MoviesController {
   }
 
   // Routes Admin uniquement
+  @UseGuards(AdminGuard)
+  @Patch('admin/:id')
+  @UseInterceptors(FileInterceptor('poster'))
+  @HttpCode(HttpStatus.OK)
+  async updateMovie(
+    @Param('id') id: string,
+    @Body() body: any,
+    @UploadedFile() posterFile: Express.Multer.File,
+    @Req() req: Request
+  ) {
+    let updateData: any = {};
+    
+    // If we have a movie field, parse it as JSON
+    if (body.movie) {
+      updateData = JSON.parse(body.movie);
+    } else {
+      // Fallback to the entire body if no movie field
+      updateData = { ...body };
+    }
+    
+    return this.moviesService.updateMovie(id, updateData, posterFile);
+  }
+
   @UseGuards(AdminGuard)
   @Post('admin/create')
   @UseInterceptors(FileInterceptor('poster'))

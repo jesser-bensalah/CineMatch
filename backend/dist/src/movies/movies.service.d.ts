@@ -65,7 +65,12 @@ export declare class MoviesService {
         originalLanguage?: string;
         id: string;
     }>;
-    getAdminMovies(): Promise<any[]>;
+    getAdminMovies(): Promise<{
+        id: string;
+    }[]>;
+    updateMovie(id: string, updateMovieDto: CreateMovieDto, posterFile?: Express.Multer.File): Promise<{
+        id: string;
+    }>;
     findMatchingUsers(userId: string, threshold?: number): Promise<MatchingUser[]>;
     getAllUsers(): Promise<{
         id: any;

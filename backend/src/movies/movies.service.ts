@@ -208,7 +208,67 @@ export class MoviesService {
   }
 
   async getAdminMovies() {
-    return await this.firebaseService.findAll('movies');
+    try {
+      console.log('Fetching admin movies...');
+      const db = this.firebaseService.getFirestore();
+      const snapshot = await db.collection('movies').get();
+      console.log(`Found ${snapshot.size} movies in movies collection`);
+      const movies = snapshot.docs.map(doc => {
+        const data = doc.data();
+        console.log(`Movie ${doc.id}:`, data.title);
+        return {
+          id: doc.id,
+          ...data
+        };
+      });
+      return movies;
+    } catch (error) {
+      console.error('Error fetching admin movies:', error);
+      throw error;
+    }
+  }
+
+  async updateMovie(id: string, updateMovieDto: CreateMovieDto, posterFile?: Express.Multer.File) {
+    const db = this.firebaseService.getFirestore();
+    const movieRef = db.collection('movies').doc(id);
+    const movieDoc = await movieRef.get();
+
+    if (!movieDoc.exists) {
+      throw new NotFoundException('Movie not found');
+    }
+
+    const updateData: any = { ...updateMovieDto };
+
+    // Handle poster upload if a new file is provided
+    if (posterFile) {
+      try {
+        // Upload the image to Cloudinary
+        const imageUrl = await this.cloudinaryService.uploadImage(posterFile);
+        updateData.posterPath = imageUrl; // uploadImage returns the URL directly
+      } catch (error) {
+        console.error('Error uploading poster:', error);
+        throw new Error('Failed to upload movie poster');
+      }
+    }
+
+    // Convert genreIds to array of numbers if it's a string
+    if (updateData.genreIds && typeof updateData.genreIds === 'string') {
+      try {
+        updateData.genreIds = JSON.parse(updateData.genreIds);
+      } catch (e) {
+        updateData.genreIds = [updateData.genreIds];
+      }
+    }
+
+    // Update the movie
+    await movieRef.update(updateData);
+    
+    // Get the updated movie
+    const updatedMovie = await movieRef.get();
+    return {
+      id: updatedMovie.id,
+      ...updatedMovie.data()
+    };
   }
 
   // Matching algorithm

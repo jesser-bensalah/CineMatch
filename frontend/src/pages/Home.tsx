@@ -60,13 +60,14 @@ import {
   people,
   create,
   closeCircle,
+  pencil,
 } from 'ionicons/icons';
 import { useAuth } from '../hooks/useAuth';
 import { useMovies } from '../hooks/useMovies';
 import { adminAPI, moviesAPI } from '../services/api.service';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorAlert from '../components/ErrorAlert';
-import { Movie, MatchingUser, AdminUser } from '../types/movie';
+import { Movie, MatchingUser, AdminUser, AdminMovie } from '../types/movie';
 
 
 const Home: React.FC = () => {
@@ -99,6 +100,9 @@ const Home: React.FC = () => {
   const [activeSegment, setActiveSegment] = useState('discover');
   const [showError, setShowError] = useState(false);
   const [showMovieModal, setShowMovieModal] = useState(false);
+  const [editingMovie, setEditingMovie] = useState<AdminMovie | null>(null);
+  const [moviePoster, setMoviePoster] = useState<File | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -112,15 +116,16 @@ const Home: React.FC = () => {
     overview: string;
     releaseDate: string;
     genreIds: number[];
+    posterPath: string;
   }
 
   const [newMovie, setNewMovie] = useState<NewMovie>({
     title: '',
     overview: '',
     releaseDate: '',
-    genreIds: []
+    genreIds: [],
+    posterPath: ''
   });
-  const [moviePoster, setMoviePoster] = useState<File | null>(null);
   const [sortBy, setSortBy] = useState<'recent' | 'oldest'>('recent');
   const [selectedGenre, setSelectedGenre] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
@@ -257,45 +262,114 @@ const Home: React.FC = () => {
 
   const handleCreateMovie = async () => {
     try {
-      const isAdmin = await checkAdminPermissions();
-      if (!isAdmin) {
-        throw new Error('Permissions administrateur requises');
+      setIsLoading(true);
+      const formData = new FormData();
+      
+      formData.append('title', newMovie.title);
+      formData.append('overview', newMovie.overview);
+      formData.append('releaseDate', newMovie.releaseDate);
+      newMovie.genreIds.forEach(id => formData.append('genreIds', id.toString()));
+      
+      if (moviePoster) {
+        formData.append('poster', moviePoster);
       }
-
-      let genreIdsArray: number[] = [];
-      if (Array.isArray(newMovie.genreIds)) {
-        genreIdsArray = newMovie.genreIds
-          .map(id => Number(id))
-          .filter(id => !isNaN(id) && id > 0);
-        genreIdsArray = [...new Set(genreIdsArray)];
-      }
-
-      if (genreIdsArray.length === 0) {
-        throw new Error('Veuillez sélectionner au moins un genre valide');
-      }
-
-      const formattedMovieData = {
-        title: newMovie.title.trim(),
-        overview: newMovie.overview.trim(),
-        releaseDate: newMovie.releaseDate,
-        genreIds: genreIdsArray
-      };
-
-      await createMovie(formattedMovieData, moviePoster || undefined);
-
+      
+      await adminAPI.createMovie(formData);
+      
       setShowMovieModal(false);
       setNewMovie({
         title: '',
         overview: '',
-        releaseDate: new Date().toISOString().split('T')[0],
-        genreIds: []
+        releaseDate: '',
+        genreIds: [],
+        posterPath: ''
+      });
+      setMoviePoster(null);
+      
+      // Refresh the movies list
+      await loadAdminMovies();
+      
+      presentToast({
+        message: 'Film créé avec succès',
+        duration: 3000,
+        color: 'success',
+        position: 'top'
+      });
+    } catch (error) {
+      console.error('Error creating movie:', error);
+      presentToast({
+        message: 'Erreur lors de la création du film',
+        duration: 3000,
+        color: 'danger',
+        position: 'top'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdateMovie = async () => {
+    if (!editingMovie) return;
+
+    try {
+      setIsLoading(true);
+      const formData = new FormData();
+      
+      // Create a movie object that matches the CreateMovieDto
+      const movieData = {
+        title: newMovie.title,
+        overview: newMovie.overview,
+        releaseDate: newMovie.releaseDate,
+        genreIds: newMovie.genreIds.map(id => Number(id)),
+        posterPath: editingMovie.posterPath, // Keep existing poster path if no new file is uploaded
+        isActive: true
+      };
+      
+      // Append the movie data as JSON
+      formData.append('movie', JSON.stringify(movieData));
+      
+      // Only append poster if it's a new file
+      if (moviePoster && moviePoster instanceof File) {
+        // Make sure the field name is 'poster' to match the backend's @UploadedFile('poster') decorator
+        formData.append('poster', moviePoster);
+      }
+      
+      // Log the form data for debugging
+      console.log('Sending update request with data:', movieData);
+
+      // Don't set Content-Type header when sending FormData, let the browser set it with the correct boundary
+      await adminAPI.updateMovie(editingMovie.id.toString(), formData);
+      
+      // Refresh the movies list
+      await loadAdminMovies();
+      
+      setShowMovieModal(false);
+      setEditingMovie(null);
+      setNewMovie({
+        title: '',
+        overview: '',
+        releaseDate: '',
+        genreIds: [],
+        posterPath: ''
       });
       setMoviePoster(null);
 
-    } catch (error: any) {
-      console.error(' Erreur lors de la création du film:', error);
-      setShowError(true);
-      throw error;
+      presentToast({
+        message: 'Film mis à jour avec succès',
+        duration: 3000,
+        color: 'success',
+        position: 'top'
+      });
+    } catch (error) {
+      console.error('Error updating movie:', error);
+      presentToast({
+        message: 'Erreur lors de la mise à jour du film',
+        duration: 3000,
+        color: 'danger',
+        position: 'top'
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -372,7 +446,7 @@ const Home: React.FC = () => {
     onToggleFavorite: (movie: Movie) => void;
     showDetailsButton?: boolean;
   }) => (
-    <IonCard className="premium-movie-card h-full flex flex-col outline outline-2 outline-indigo-400/60">
+    <IonCard className="premium-movie-card h-full flex flex-col outline outline-2 outline-indigo-400/60 m-2 hover:shadow-2xl hover:shadow-indigo-500/20 transition-all duration-300">
       <div className="relative flex-shrink-0">
         <IonImg
           src={getImageUrl(movie.poster_path, 'poster')}
@@ -520,42 +594,42 @@ const Home: React.FC = () => {
     }
   };
 
- const handleCancelMatchRequest = async (requestId: string) => {
-  if (!requestId) {
-    console.error('No request ID provided for cancellation');
-    presentToast({
-      message: 'Erreur: ID de demande manquant',
-      duration: 3000,
-      color: 'danger',
-      position: 'top'
-    });
-    return;
-  }
+  const handleCancelMatchRequest = async (requestId: string) => {
+    if (!requestId) {
+      console.error('No request ID provided for cancellation');
+      presentToast({
+        message: 'Erreur: ID de demande manquant',
+        duration: 3000,
+        color: 'danger',
+        position: 'top'
+      });
+      return;
+    }
 
-  try {
-    const response = await moviesAPI.cancelMatchRequest(requestId);
-    console.log('Cancel response:', response);
-    
-    await loadMatchingUsers(); // Reload to update status
-    presentToast({
-      message: 'Demande de match annulée avec succès',
-      duration: 2000,
-      color: 'success',
-      position: 'top'
-    });
-  } catch (error: any) {
-    console.error('Error canceling match request:', error);
-    const errorMessage = error.response?.data?.message || 'Erreur lors de l\'annulation de la demande';
-    console.error('Error details:', error.response?.data);
-    
-    presentToast({
-      message: errorMessage,
-      duration: 3000,
-      color: 'danger',
-      position: 'top'
-    });
-  }
-};
+    try {
+      const response = await moviesAPI.cancelMatchRequest(requestId);
+      console.log('Cancel response:', response);
+      
+      await loadMatchingUsers(); // Reload to update status
+      presentToast({
+        message: 'Demande de match annulée avec succès',
+        duration: 2000,
+        color: 'success',
+        position: 'top'
+      });
+    } catch (error: any) {
+      console.error('Error canceling match request:', error);
+      const errorMessage = error.response?.data?.message || 'Erreur lors de l\'annulation de la demande';
+      console.error('Error details:', error.response?.data);
+      
+      presentToast({
+        message: errorMessage,
+        duration: 3000,
+        color: 'danger',
+        position: 'top'
+      });
+    }
+  };
 
   const handleUnmatch = async (requestId: string) => {
     if (!requestId) {
@@ -614,42 +688,43 @@ const Home: React.FC = () => {
             }
           }
         };
-    case 'pending':
-      // If current user is the SENDER, show cancel button
-      if (isSender) {
-        return {
-          type: 'cancel' as const,  // New type for cancel button
-          text: 'Annuler la demande',
-          color: 'medium',
-          requestId: matchingUser.matchRequestId || '',
-          handler: () => {
-            if (matchingUser.matchRequestId) {
-              handleCancelMatchRequest(matchingUser.matchRequestId);
+      case 'pending':
+        // If current user is the SENDER, show cancel button
+        if (isSender) {
+          return {
+            type: 'cancel' as const,  // New type for cancel button
+            text: 'Annuler la demande',
+            color: 'medium',
+            requestId: matchingUser.matchRequestId || '',
+            handler: () => {
+              if (matchingUser.matchRequestId) {
+                handleCancelMatchRequest(matchingUser.matchRequestId);
+              }
             }
-          }
+          };
+        }
+        // If current user is the RECEIVER, show accept/decline buttons
+        return {
+          type: 'double' as const,
+          requestId: matchingUser.matchRequestId || ''
         };
-      }
-      // If current user is the RECEIVER, show accept/decline buttons
-      return {
-        type: 'double' as const,
-        requestId: matchingUser.matchRequestId || ''
-      };
-    case 'declined':
-    case 'none':
-    default:
-      return {
-        type: 'single' as const,
-        text: 'Match',
-        color: 'primary',
-        icon: undefined,
-        disabled: false,
-        fill: 'clear' as const
-      };
-  }
-};
+      case 'declined':
+      case 'none':
+      default:
+        return {
+          type: 'single' as const,
+          text: 'Match',
+          color: 'primary',
+          icon: undefined,
+          disabled: false,
+          fill: 'clear' as const
+        };
+    }
+  };
 
+  // match user's list
   const renderMatchingUser = (matchingUser: MatchingUser) => {
-  const buttonProps = getMatchButtonProps(matchingUser);
+    const buttonProps = getMatchButtonProps(matchingUser);
 
     console.log('👤 Rendering matching user:', {
       userId: matchingUser.userId,
@@ -660,11 +735,11 @@ const Home: React.FC = () => {
       buttonType: buttonProps.type
     });
     
-     return (
-    <IonItem
-      key={matchingUser.userId}
-      className="premium-movie-card mb-4 border border-white/10 outline outline-2 outline-indigo-400/60"
-    >
+    return (
+      <IonItem
+        key={matchingUser.userId}
+        className="premium-movie-card w-[calc(95%-1rem)] ml-10 mb-4 mt-4 border border-white/10 outline outline-2 outline-indigo-400/60"
+      >
         <IonAvatar slot="start" className="w-16 h-16 border-2 border-indigo-400 shadow-lg">
           <img
             src={matchingUser.photoUrl || '/assets/images/avatar-placeholder.png'}
@@ -684,66 +759,66 @@ const Home: React.FC = () => {
           </div>
         </IonLabel>
         
-         {buttonProps.type === 'double' ? (
-        <div className="flex gap-2 mr-2">
-          <IonButton
-            color="success"
-            fill="solid"
-            size="small"
-            onClick={() => handleRespondToMatch(buttonProps.requestId!, 'accepted')}
-          >
-            <IonIcon icon={heart} slot="icon-only" />
-          </IonButton>
-          <IonButton
-            color="danger"
-            fill="outline"
-            size="small"
-            onClick={() => handleRespondToMatch(buttonProps.requestId!, 'declined')}
-          >
-            <IonIcon icon={close} slot="icon-only" />
-          </IonButton>
-        </div>
-      ) : buttonProps.type === 'cancel' ? (
-        // Cancel button for pending requests
-        <div className="mr-2">
-          <IonButton
-            color={buttonProps.color}
-            fill="outline"
-            size="small"
-            onClick={buttonProps.handler}
-          >
-            <IonIcon icon={close} slot="start" />
-            {buttonProps.text}
-          </IonButton>
-        </div>
-      ) : buttonProps.type === 'unmatch' ? (
-        // Unmatch button for accepted matches
-        <div className="mr-2">
-          <IonButton
-            color={buttonProps.color}
-            fill="outline"
-            size="small"
-            onClick={buttonProps.handler}
-          >
-            <IonIcon icon={closeCircle} slot="start" />
-            {buttonProps.text}
-          </IonButton>
-        </div>
-      ) : (
-        // Default match button
-        <div className="mr-2">
-          <IonButton
-            color={buttonProps.color}
-            fill={buttonProps.fill}
-            size="small"
-            disabled={buttonProps.disabled}
-            onClick={() => handleSendMatchRequest(matchingUser.userId)}
-          >
-            {buttonProps.icon && <IonIcon icon={buttonProps.icon} slot="start" />}
-            {buttonProps.text}
-          </IonButton>
-        </div>
-      )}
+        {buttonProps.type === 'double' ? (
+          <div className="flex gap-2 mr-2">
+            <IonButton
+              color="success"
+              fill="solid"
+              size="small"
+              onClick={() => handleRespondToMatch(buttonProps.requestId!, 'accepted')}
+            >
+              <IonIcon icon={heart} slot="icon-only" />
+            </IonButton>
+            <IonButton
+              color="danger"
+              fill="outline"
+              size="small"
+              onClick={() => handleRespondToMatch(buttonProps.requestId!, 'declined')}
+            >
+              <IonIcon icon={close} slot="icon-only" />
+            </IonButton>
+          </div>
+        ) : buttonProps.type === 'cancel' ? (
+          // Cancel button for pending requests
+          <div className="mr-2">
+            <IonButton
+              color={buttonProps.color}
+              fill="outline"
+              size="small"
+              onClick={buttonProps.handler}
+            >
+              <IonIcon icon={close} slot="start" />
+              {buttonProps.text}
+            </IonButton>
+          </div>
+        ) : buttonProps.type === 'unmatch' ? (
+          // Unmatch button for accepted matches
+          <div className="mr-2">
+            <IonButton
+              color={buttonProps.color}
+              fill="outline"
+              size="small"
+              onClick={buttonProps.handler}
+            >
+              <IonIcon icon={closeCircle} slot="start" />
+              {buttonProps.text}
+            </IonButton>
+          </div>
+        ) : (
+          // Default match button
+          <div className="mr-2">
+            <IonButton
+              color="primary"
+              fill="outline"
+              size="small"
+              disabled={buttonProps.disabled}
+              onClick={() => handleSendMatchRequest(matchingUser.userId)}
+            >
+              {buttonProps.icon && <IonIcon icon={buttonProps.icon} slot="start" />}
+              {buttonProps.text}
+            </IonButton>
+          </div>
+        )}
         
         <IonBadge
           color="success"
@@ -956,7 +1031,7 @@ const Home: React.FC = () => {
         )}
       </IonHeader>
 
-      <IonContent fullscreen className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      <IonContent fullscreen className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 ">
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
           <IonRefresherContent
             pullingIcon={refresh}
@@ -979,9 +1054,7 @@ const Home: React.FC = () => {
                   </span>
                 </h2>
 
-                {loading ? (
-                  <LoadingSpinner message="Recherche en cours..." />
-                ) : filteredSearchResults.length > 0 ? (
+                {filteredSearchResults.length > 0 ? (
                   renderMovieGrid(filteredSearchResults)
                 ) : (
                   <div className="text-center py-16">
@@ -1059,7 +1132,12 @@ const Home: React.FC = () => {
                 </IonButton>
               </div>
             ) : (
-              <IonGrid className="px-0">
+              <IonGrid className="px-0" style={{
+                height: '100%',
+                overflowY: 'auto',
+                paddingBottom: '100px'
+              }}
+              >
                 <IonRow>
                   {favorites.map(favorite => {
                     const movie: Movie = {
@@ -1074,7 +1152,7 @@ const Home: React.FC = () => {
                     };
 
                     return (
-                      <IonCol size="6" sizeMd="4" sizeLg="3" key={favorite.movieId} className="mb-6">
+                      <IonCol size="6" sizeMd="4" sizeLg="3"  key={favorite.movieId} className="mb-6">
                         <PremiumMovieCard
                           movie={movie}
                           isFavorite={true}
@@ -1114,7 +1192,6 @@ const Home: React.FC = () => {
                   Ajoutez plus de films à vos favoris pour trouver des personnes avec des goûts similaires.
                 </p>
                 <IonButton
-                fill='clear'
                   onClick={() => setActiveSegment('discover')}
                   className="premium-btn"
                 >
@@ -1180,7 +1257,8 @@ const Home: React.FC = () => {
                     </IonCardTitle>
                   </IonCardHeader>
                   <IonCardContent className="p-6">
-                    <IonButton fill='clear'
+                    <IonButton 
+                      fill='clear'
                       onClick={() => setShowMovieModal(true)}
                       className="premium-btn bg-gradient-to-r from-green-500 to-blue-500 mb-6 rounded-xl hover:scale-105 hover:shadow-xl transition-transform duration-300 border border-green-400/50 animate-bounce"
                     >
@@ -1220,6 +1298,34 @@ const Home: React.FC = () => {
                                 </p>
                               )}
                             </div>
+                            <IonButton
+                              fill='clear'
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // Map the movie data to match the AdminMovie interface
+                                const movieData: AdminMovie = {
+                                  id: movie.id,
+                                  title: movie.title,
+                                  overview: movie.overview,
+                                  releaseDate: movie.releaseDate,
+                                  posterPath: movie.posterPath,
+                                  genreIds: movie.genreIds || [],
+                                  isActive: movie.isActive ?? true,
+                                  createdAt: movie.createdAt || new Date().toISOString(),
+                                  updatedAt: new Date().toISOString()
+                                };
+                                setEditingMovie(movieData);
+                                setNewMovie({
+                                  title: movie.title || '',
+                                  overview: movie.overview || '',
+                                  releaseDate: movie.releaseDate || '',
+                                  genreIds: movie.genreIds || [],
+                                  posterPath: movie.posterPath || ''
+                                });
+                                setShowMovieModal(true);
+                              }}>
+                              <IonIcon icon={create} color='success' slot="start" />
+                            </IonButton>
                             <IonBadge color={movie.isActive ? "success" : "medium"} className="rounded-full px-3 py-1 text-xs font-semibold">
                               {movie.isActive ? "Actif" : "Inactif"}
                             </IonBadge>
@@ -1270,10 +1376,29 @@ const Home: React.FC = () => {
         </IonInfiniteScroll>
 
         {/* Modal de création de film */}
-        <IonModal isOpen={showMovieModal} onDidDismiss={() => setShowMovieModal(false)}>
+        <IonModal 
+          style={{
+            '--height': 'calc(100% - 100px)',
+            '--border-radius': '18px',
+            '--top': '50%',
+            '--left': '50%',
+            '--transform': 'translate(-50%, -50%)',
+          }}
+          isOpen={showMovieModal} 
+          onDidDismiss={() => {
+            setShowMovieModal(false);
+            setEditingMovie(null);
+            setNewMovie({
+              title: '',
+              overview: '',
+              releaseDate: '',
+              genreIds: [],
+              posterPath: ''
+            });
+          }}>
           <IonHeader>
-            <IonToolbar>
-              <IonTitle>Ajouter un nouveau film</IonTitle>
+            <IonToolbar className='text-center'>
+              <IonTitle>{editingMovie ? 'Modifier le film' : 'Ajouter un nouveau film'}</IonTitle>
               <IonButton slot="end" fill="clear" onClick={() => setShowMovieModal(false)}>
                 <IonIcon icon={close} />
               </IonButton>
@@ -1343,13 +1468,14 @@ const Home: React.FC = () => {
               </div>
 
               <IonButton
+                fill='clear'
                 expand="block"
-                onClick={handleCreateMovie}
+                onClick={editingMovie ? handleUpdateMovie : handleCreateMovie}
                 disabled={!newMovie.title || !newMovie.overview || !newMovie.releaseDate || newMovie.genreIds.length === 0}
                 className="premium-btn mt-4"
               >
-                <IonIcon icon={add} slot="start" />
-                Créer le film
+                <IonIcon icon={editingMovie ? create : add} slot="start" />
+                {editingMovie ? 'Mettre à jour' : 'Créer le film'}
               </IonButton>
             </div>
           </IonContent>
@@ -1360,11 +1486,19 @@ const Home: React.FC = () => {
           isOpen={showDetailModal}
           onDidDismiss={() => setShowDetailModal(false)}
           className="movie-detail-modal"
+          style={{
+            '--border-radius': '18px',
+            '--width': '90%',
+            '--max-width': '600px',
+            '--height': '90%',
+            '--max-height': '800px',
+            '--box-shadow': '0 4px 20px rgba(0, 0, 0, 0.2)'
+          }}
         >
           {selectedMovie && (
             <>
               <IonHeader className="bg-gray-900 border-b border-white/10">
-                <IonToolbar className="bg-transparent">
+                <IonToolbar className="bg-transparent text-center">
                   <IonTitle className="text-lg font-bold text-white truncate">
                     {selectedMovie.title}
                   </IonTitle>
@@ -1530,8 +1664,8 @@ const Home: React.FC = () => {
         </IonModal>
 
         {/* Modal de confirmation de déconnexion */}
-        <IonModal  className="rounded-[20px]" isOpen={showLogoutConfirm} onDidDismiss={() => setShowLogoutConfirm(false)}>
-          <div className="premium-movie-card p-6 text-center justify-center items-center w-full h-full flex flex-col">
+        <IonModal style={{'--border-radius': '20px'}} isOpen={showLogoutConfirm} onDidDismiss={() => setShowLogoutConfirm(false)}>
+          <div className="premium-movie-card bg-transparent p-6 text-center justify-center items-center w-full h-full flex flex-col">
             <IonIcon icon={logOutOutline} className="text-4xl text-indigo-600 mb-4" />
             <h3 className="text-xl font-bold text-white mb-2">Déconnexion</h3>
             <p className="text-gray-300 mb-6">Êtes-vous sûr de vouloir vous déconnecter ?</p>

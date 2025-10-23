@@ -180,7 +180,7 @@ const MovieCard: React.FC<MovieCardProps> = ({
             </div>
           </IonCardHeader>
 
-          <IonCardContent className="p-4 pt-0 flex-1 flex flex-col">
+          <IonCardContent className="p-4 pt-0 flex-1 flex flex-col ">
             {/* Genres avec style amélioré */}
             {genreNames.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-3">
@@ -228,7 +228,7 @@ const MovieCard: React.FC<MovieCardProps> = ({
       <IonModal
         isOpen={showDetails}
         onDidDismiss={() => setShowDetails(false)}
-        className="rounded-t-3xl cinema-modal"
+        className="rounded-[25px] cinema-modal"
       >
         <IonHeader className="shadow-2xl cinema-header border-b-0">
           <IonToolbar className="bg-gradient-to-r from-gray-900 to-gray-800">

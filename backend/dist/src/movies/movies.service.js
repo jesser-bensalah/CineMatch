@@ -163,7 +163,58 @@ let MoviesService = class MoviesService {
         };
     }
     async getAdminMovies() {
-        return await this.firebaseService.findAll('movies');
+        try {
+            console.log('Fetching admin movies...');
+            const db = this.firebaseService.getFirestore();
+            const snapshot = await db.collection('movies').get();
+            console.log(`Found ${snapshot.size} movies in movies collection`);
+            const movies = snapshot.docs.map(doc => {
+                const data = doc.data();
+                console.log(`Movie ${doc.id}:`, data.title);
+                return {
+                    id: doc.id,
+                    ...data
+                };
+            });
+            return movies;
+        }
+        catch (error) {
+            console.error('Error fetching admin movies:', error);
+            throw error;
+        }
+    }
+    async updateMovie(id, updateMovieDto, posterFile) {
+        const db = this.firebaseService.getFirestore();
+        const movieRef = db.collection('movies').doc(id);
+        const movieDoc = await movieRef.get();
+        if (!movieDoc.exists) {
+            throw new common_1.NotFoundException('Movie not found');
+        }
+        const updateData = { ...updateMovieDto };
+        if (posterFile) {
+            try {
+                const imageUrl = await this.cloudinaryService.uploadImage(posterFile);
+                updateData.posterPath = imageUrl;
+            }
+            catch (error) {
+                console.error('Error uploading poster:', error);
+                throw new Error('Failed to upload movie poster');
+            }
+        }
+        if (updateData.genreIds && typeof updateData.genreIds === 'string') {
+            try {
+                updateData.genreIds = JSON.parse(updateData.genreIds);
+            }
+            catch (e) {
+                updateData.genreIds = [updateData.genreIds];
+            }
+        }
+        await movieRef.update(updateData);
+        const updatedMovie = await movieRef.get();
+        return {
+            id: updatedMovie.id,
+            ...updatedMovie.data()
+        };
     }
     async findMatchingUsers(userId, threshold = 0.20) {
         const currentUserDoc = await this.firebaseService.doc('users', userId).get();
