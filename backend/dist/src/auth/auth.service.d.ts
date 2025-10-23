@@ -3,6 +3,7 @@ import { FirebaseService } from '../shared/firebase.service';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { AdminUpdateUserDto } from './dto/admin-update-user.dto';
 export interface UserData {
     id: string;
     nom: string;
@@ -49,4 +50,11 @@ export declare class AuthService {
             role: any;
         };
     }>;
+    updateUser(userId: string, updateData: AdminUpdateUserDto, photoFile?: Express.Multer.File): Promise<UserData>;
+    updateUserByAdmin(userId: string, updateData: {
+        prenom?: string;
+        nom?: string;
+        email?: string;
+        isActive?: boolean;
+    }): Promise<any>;
 }

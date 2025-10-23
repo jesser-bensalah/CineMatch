@@ -1,9 +1,14 @@
-import { AuthService } from './auth.service';
+import { AuthService, UserData } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { AdminUpdateUserDto } from './dto/admin-update-user.dto';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { FirebaseService } from '../shared/firebase.service';
 export declare class AuthController {
     private authService;
-    constructor(authService: AuthService);
+    private cloudinaryService;
+    private firebaseService;
+    constructor(authService: AuthService, cloudinaryService: CloudinaryService, firebaseService: FirebaseService);
     register(registerDto: RegisterDto, photoFile?: Express.Multer.File): Promise<{
         access_token: string;
         userId: string;
@@ -42,4 +47,6 @@ export declare class AuthController {
             isActive: any;
         };
     }>;
+    updateProfile(req: any, updateDto: AdminUpdateUserDto, photoFile?: Express.Multer.File): Promise<UserData>;
+    updateUserByAdmin(userId: string, updateDto: AdminUpdateUserDto): Promise<any>;
 }

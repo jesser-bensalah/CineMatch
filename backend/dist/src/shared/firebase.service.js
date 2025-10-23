@@ -77,9 +77,23 @@ let FirebaseService = class FirebaseService {
             return null;
         }
         const doc = snapshot.docs[0];
+        const data = doc.data();
+        if (!data) {
+            return null;
+        }
         return {
             id: doc.id,
-            ...doc.data(),
+            nom: data.nom || '',
+            prenom: data.prenom || '',
+            age: data.age || 0,
+            email: data.email || '',
+            password: data.password || '',
+            photoUrl: data.photoUrl || '',
+            isActive: data.isActive !== undefined ? data.isActive : true,
+            role: data.role || 'user',
+            favorites: data.favorites || [],
+            createdAt: data.createdAt || '',
+            updatedAt: data.updatedAt || ''
         };
     }
     async findAll(collectionName, whereClause) {
@@ -88,10 +102,37 @@ let FirebaseService = class FirebaseService {
             query = query.where(whereClause.field, whereClause.operator, whereClause.value);
         }
         const snapshot = await query.get();
-        return snapshot.docs.map(doc => ({
+        return snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                ...data,
+            };
+        });
+    }
+    async findById(collectionName, docId) {
+        const doc = await this.doc(collectionName, docId).get();
+        if (!doc.exists) {
+            return null;
+        }
+        const data = doc.data();
+        if (!data) {
+            return null;
+        }
+        return {
             id: doc.id,
-            ...doc.data(),
-        }));
+            nom: data.nom || '',
+            prenom: data.prenom || '',
+            age: data.age || 0,
+            email: data.email || '',
+            password: data.password || '',
+            photoUrl: data.photoUrl || '',
+            isActive: data.isActive !== undefined ? data.isActive : true,
+            role: data.role || 'user',
+            favorites: data.favorites || [],
+            createdAt: data.createdAt || '',
+            updatedAt: data.updatedAt || ''
+        };
     }
 };
 exports.FirebaseService = FirebaseService;

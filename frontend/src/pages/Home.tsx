@@ -35,6 +35,7 @@ import {
   IonBadge,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
+  useIonToast,
 } from '@ionic/react';
 import {
   heart,
@@ -57,15 +58,18 @@ import {
   shield,
   logOutOutline,
   people,
+  create,
 } from 'ionicons/icons';
 import { useAuth } from '../hooks/useAuth';
 import { useMovies } from '../hooks/useMovies';
+import { adminAPI } from '../services/api.service';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorAlert from '../components/ErrorAlert';
 import { Movie, MatchingUser, AdminUser } from '../types/movie';
 
 const Home: React.FC = () => {
   const { user, logout } = useAuth();
+  const [presentToast] = useIonToast();
   const {
     favorites,
     searchResults,
@@ -96,6 +100,10 @@ const Home: React.FC = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
 
   interface NewMovie {
     title: string;
@@ -316,6 +324,45 @@ const Home: React.FC = () => {
     event.target.complete();
   };
 
+  const handleEditClick = (user: AdminUser) => {
+    setEditingUser(user);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveUser = async (updatedUser: AdminUser) => {
+    try {
+      // Call the API to update the user
+      await adminAPI.updateUser(updatedUser.id, {
+        prenom: updatedUser.prenom,
+        nom: updatedUser.nom,
+        email: updatedUser.email,
+        isActive: updatedUser.isActive
+      });
+      
+      // Refresh the admin users list to get the updated data
+      await loadAdminUsers();
+      
+      // Close the edit modal
+      setIsEditModalOpen(false);
+      
+      // Show success message
+      presentToast({
+        message: 'Utilisateur mis à jour avec succès',
+        duration: 2000,
+        color: 'success',
+        position: 'top'
+      });
+    } catch (error: any) {
+      console.error('Error updating user:', error);
+      const errorMessage = error.response?.data?.message || 'Erreur lors de la mise à jour de l\'utilisateur';
+      presentToast({
+        message: errorMessage,
+        duration: 3000,
+        color: 'danger',
+        position: 'top'
+      });
+    }
+  };
 
   const PremiumMovieCard = ({ movie, isFavorite, onToggleFavorite, showDetailsButton = true }: {
     movie: Movie;
@@ -479,6 +526,7 @@ const Home: React.FC = () => {
           <IonBadge color="blue" className="text-xs">
             {adminUser.favoritesCount} favoris
           </IonBadge>
+          
           <IonBadge color="medium" className="text-xs">
             {new Date(adminUser.createdAt).toLocaleDateString()}
           </IonBadge>
@@ -490,6 +538,18 @@ const Home: React.FC = () => {
         color="success"
         className="ml-2"
       />
+      <IonButton
+        onClick={(e) => {
+          e.stopPropagation();
+          handleEditClick(adminUser);
+        }}
+        fill="clear"
+        slot="end"
+        color="success"
+        className="mr-2"
+      >
+        <IonIcon icon={create} size="large" />
+      </IonButton>
     </IonItem>
   );
 
@@ -803,6 +863,7 @@ const Home: React.FC = () => {
                   Ajoutez plus de films à vos favoris pour trouver des personnes avec des goûts similaires.
                 </p>
                 <IonButton
+                fill='clear'
                   onClick={() => setActiveSegment('discover')}
                   className="premium-btn"
                 >
@@ -868,7 +929,7 @@ const Home: React.FC = () => {
                     </IonCardTitle>
                   </IonCardHeader>
                   <IonCardContent className="p-6">
-                    <IonButton
+                    <IonButton fill='clear'
                       onClick={() => setShowMovieModal(true)}
                       className="premium-btn bg-gradient-to-r from-green-500 to-blue-500 mb-6 rounded-xl hover:scale-105 hover:shadow-xl transition-transform duration-300 border border-green-400/50 animate-bounce"
                     >
@@ -1243,6 +1304,66 @@ const Home: React.FC = () => {
               </IonButton>
             </div>
           </div>
+        </IonModal>
+
+        {/* Modal de modification d'utilisateur */}
+        <IonModal isOpen={isEditModalOpen} onDidDismiss={() => setIsEditModalOpen(false)}>
+          <IonHeader>
+            <IonToolbar>
+              <IonTitle>Modifier l'utilisateur</IonTitle>
+              <IonButton slot="end" fill="clear" onClick={() => setIsEditModalOpen(false)}>
+                <IonIcon icon={close} />
+              </IonButton>
+            </IonToolbar>
+          </IonHeader>
+          <IonContent className="ion-padding">
+            {editingUser && (
+              <div className="space-y-4">
+                <IonItem>
+                  <IonLabel position="stacked">Prénom</IonLabel>
+                  <IonInput
+                    value={editingUser.prenom}
+                    onIonChange={e => setEditingUser({...editingUser, prenom: e.detail.value || ''})}
+                  />
+                </IonItem>
+                
+                <IonItem>
+                  <IonLabel position="stacked">Nom</IonLabel>
+                  <IonInput
+                    value={editingUser.nom}
+                    onIonChange={e => setEditingUser({...editingUser, nom: e.detail.value || ''})}
+                  />
+                </IonItem>
+                
+                <IonItem>
+                  <IonLabel position="stacked">Email</IonLabel>
+                  <IonInput
+                    type="email"
+                    value={editingUser.email}
+                    onIonChange={e => setEditingUser({...editingUser, email: e.detail.value || ''})}
+                  />
+                </IonItem>
+                
+                <IonItem>
+                  <IonLabel>Compte actif</IonLabel>
+                  <IonToggle
+                    checked={editingUser.isActive}
+                    onIonChange={e => setEditingUser({...editingUser, isActive: e.detail.checked})}
+                  />
+                </IonItem>
+                
+                <div className="ion-padding">
+                  <IonButton
+                    expand="block"
+                    onClick={() => handleSaveUser(editingUser)}
+                    className="mt-4"
+                  >
+                    Enregistrer les modifications
+                  </IonButton>
+                </div>
+              </div>
+            )}
+          </IonContent>
         </IonModal>
 
         {/* Gestion des erreurs */}

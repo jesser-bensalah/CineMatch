@@ -60,14 +60,14 @@ let FirebaseModule = class FirebaseModule {
             if (!projectId || !privateKey || !clientEmail) {
                 throw new Error('Firebase configuration is missing');
             }
-            const serviceAccount = {
-                projectId,
-                privateKey: privateKey.replace(/\\n/g, '\n'),
-                clientEmail,
-            };
+            const formattedPrivateKey = privateKey.replace(/\\n/g, '\n');
             admin.initializeApp({
-                credential: admin.credential.cert(serviceAccount),
-                databaseURL: `https://${serviceAccount.projectId}.firebaseio.com`,
+                credential: admin.credential.cert({
+                    projectId,
+                    privateKey: formattedPrivateKey,
+                    clientEmail,
+                }),
+                databaseURL: `https://${projectId}.firebaseio.com`,
             });
             const db = admin.firestore();
             db.settings({
@@ -80,7 +80,9 @@ let FirebaseModule = class FirebaseModule {
 exports.FirebaseModule = FirebaseModule;
 exports.FirebaseModule = FirebaseModule = __decorate([
     (0, common_1.Global)(),
-    (0, common_1.Module)({}),
+    (0, common_1.Module)({
+        imports: [config_1.ConfigModule],
+    }),
     __metadata("design:paramtypes", [config_1.ConfigService])
 ], FirebaseModule);
 //# sourceMappingURL=firebase.module.js.map

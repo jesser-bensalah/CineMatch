@@ -175,6 +175,9 @@ export const adminAPI = {
 
   getUserDetails: (userId: string) =>
     api.get<AdminUser>(`/movies/admin/users/${userId}`),
+    
+  updateUser: (userId: string, userData: Partial<AdminUser>) =>
+    api.put<AdminUser>(`/auth/admin/users/${userId}`, userData),
 };
 
 

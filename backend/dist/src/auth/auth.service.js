@@ -59,27 +59,23 @@ let AuthService = class AuthService {
     }
     async validateUser(payload) {
         try {
-            const userDoc = await this.firebaseService.doc('users', payload.sub).get();
-            if (!userDoc.exists) {
-                return null;
-            }
-            const userData = userDoc.data();
-            if (!userData) {
+            const user = await this.firebaseService.findById('users', payload.sub);
+            if (!user) {
                 return null;
             }
             return {
-                id: userDoc.id,
-                nom: userData.nom || '',
-                prenom: userData.prenom || '',
-                age: userData.age || 0,
-                email: userData.email || '',
-                password: userData.password || '',
-                photoUrl: userData.photoUrl || '',
-                isActive: userData.isActive !== undefined ? userData.isActive : true,
-                role: userData.role || 'user',
-                favorites: userData.favorites || [],
-                createdAt: userData.createdAt || new Date().toISOString(),
-                updatedAt: userData.updatedAt || new Date().toISOString()
+                id: user.id,
+                nom: user.nom || '',
+                prenom: user.prenom || '',
+                age: user.age || 0,
+                email: user.email || '',
+                password: user.password || '',
+                photoUrl: user.photoUrl || '',
+                isActive: user.isActive !== undefined ? user.isActive : true,
+                role: user.role || 'user',
+                favorites: user.favorites || [],
+                createdAt: user.createdAt || new Date().toISOString(),
+                updatedAt: user.updatedAt || new Date().toISOString()
             };
         }
         catch (error) {
@@ -186,6 +182,59 @@ let AuthService = class AuthService {
                 role: user.role
             }
         };
+    }
+    async updateUser(userId, updateData, photoFile) {
+        try {
+            const updatePayload = { ...updateData };
+            if (photoFile) {
+                const photoUrl = await this.cloudinaryService.uploadImage(photoFile);
+                updatePayload.photoUrl = photoUrl;
+            }
+            delete updatePayload.photoFile;
+            await this.firebaseService.update('users', userId, {
+                ...updatePayload,
+                updatedAt: new Date().toISOString(),
+            });
+            const updatedUser = await this.firebaseService.findOneByField('users', 'id', userId);
+            if (!updatedUser) {
+                throw new Error('User not found after update');
+            }
+            const { password, ...userWithoutPassword } = updatedUser;
+            return userWithoutPassword;
+        }
+        catch (error) {
+            console.error('Error updating user:', error);
+            throw new Error('Failed to update user profile');
+        }
+    }
+    async updateUserByAdmin(userId, updateData) {
+        try {
+            const userDoc = await this.firebaseService.findById('users', userId);
+            if (!userDoc) {
+                throw new common_1.BadRequestException('Utilisateur non trouvé');
+            }
+            const updatePayload = {};
+            if (updateData.prenom !== undefined)
+                updatePayload.prenom = updateData.prenom;
+            if (updateData.nom !== undefined)
+                updatePayload.nom = updateData.nom;
+            if (updateData.email !== undefined)
+                updatePayload.email = updateData.email;
+            if (updateData.isActive !== undefined)
+                updatePayload.isActive = updateData.isActive;
+            updatePayload.updatedAt = new Date().toISOString();
+            await this.firebaseService.update('users', userId, updatePayload);
+            const updatedUser = await this.firebaseService.findById('users', userId);
+            if (!updatedUser) {
+                throw new common_1.BadRequestException('Utilisateur non trouvé après mise à jour');
+            }
+            const { password, ...userWithoutPassword } = updatedUser;
+            return userWithoutPassword;
+        }
+        catch (error) {
+            console.error('Error updating user by admin:', error);
+            throw error;
+        }
     }
 };
 exports.AuthService = AuthService;

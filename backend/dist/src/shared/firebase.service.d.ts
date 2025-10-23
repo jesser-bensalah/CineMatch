@@ -11,4 +11,5 @@ export declare class FirebaseService {
         operator: any;
         value: any;
     }): Promise<any[]>;
+    findById(collectionName: string, docId: string): Promise<any>;
 }

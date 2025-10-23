@@ -5,6 +5,7 @@ import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcryptjs';
+import { AdminUpdateUserDto } from './dto/admin-update-user.dto';
 
 export interface UserData {
   id: string;
@@ -168,5 +169,80 @@ export class AuthService {
         role: user.role
       }
     };
+  }
+  async updateUser(
+  userId: string,
+  updateData: AdminUpdateUserDto,
+  photoFile?: Express.Multer.File,
+): Promise<UserData> {
+  try {
+    const updatePayload: any = { ...updateData };
+    
+    // Handle file upload if a new photo is provided
+    if (photoFile) {
+      const photoUrl = await this.cloudinaryService.uploadImage(photoFile);
+      updatePayload.photoUrl = photoUrl;
+    }
+
+    // Remove the photoFile property as it's not part of the user document
+    delete updatePayload.photoFile;
+
+    // Update the user in Firebase
+    await this.firebaseService.update('users', userId, {
+      ...updatePayload,
+      updatedAt: new Date().toISOString(),
+    });
+
+    // Fetch the updated user document
+    const updatedUser = await this.firebaseService.findOneByField('users', 'id', userId);
+    if (!updatedUser) {
+      throw new Error('User not found after update');
+    }
+
+    // Return the updated user data (excluding sensitive information)
+    const { password, ...userWithoutPassword } = updatedUser;
+    return userWithoutPassword;
+  } catch (error) {
+    console.error('Error updating user:', error);
+    throw new Error('Failed to update user profile');
+  }
+}
+
+  async updateUserByAdmin(
+    userId: string,
+    updateData: { prenom?: string; nom?: string; email?: string; isActive?: boolean }
+  ) {
+    try {
+      const userDoc = await this.firebaseService.findById('users', userId);
+      
+      if (!userDoc) {
+        throw new BadRequestException('Utilisateur non trouvé');
+      }
+
+      // Build update payload with only provided fields
+      const updatePayload: any = {};
+      if (updateData.prenom !== undefined) updatePayload.prenom = updateData.prenom;
+      if (updateData.nom !== undefined) updatePayload.nom = updateData.nom;
+      if (updateData.email !== undefined) updatePayload.email = updateData.email;
+      if (updateData.isActive !== undefined) updatePayload.isActive = updateData.isActive;
+      
+      updatePayload.updatedAt = new Date().toISOString();
+
+      // Update the user in Firebase
+      await this.firebaseService.update('users', userId, updatePayload);
+
+      // Fetch the updated user document
+      const updatedUser = await this.firebaseService.findById('users', userId);
+      if (!updatedUser) {
+        throw new BadRequestException('Utilisateur non trouvé après mise à jour');
+      }
+
+      // Return the updated user data (excluding sensitive information)
+      const { password, ...userWithoutPassword } = updatedUser;
+      return userWithoutPassword;
+    } catch (error) {
+      console.error('Error updating user by admin:', error);
+      throw error;
+    }
   }
 }
