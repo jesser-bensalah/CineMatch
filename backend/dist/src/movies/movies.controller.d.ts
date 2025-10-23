@@ -56,5 +56,23 @@ export declare class MoviesController {
         message: string;
         isActive: boolean;
     }>;
+    sendMatchRequest(req: Request, targetUserId: string): Promise<{
+        id: any;
+        message: string;
+    }>;
+    respondToMatchRequest(req: Request, requestId: string, body: {
+        status: 'accepted' | 'declined';
+    }): Promise<{
+        message: string;
+        status: "accepted" | "declined";
+    }>;
+    getMatchRequests(req: Request): Promise<{
+        id: any;
+        fromUserId: any;
+        fromUserName: string;
+        fromUserPhoto: any;
+        status: any;
+        createdAt: any;
+    }[]>;
 }
 export {};

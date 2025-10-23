@@ -62,7 +62,7 @@ import {
 } from 'ionicons/icons';
 import { useAuth } from '../hooks/useAuth';
 import { useMovies } from '../hooks/useMovies';
-import { adminAPI } from '../services/api.service';
+import { adminAPI, moviesAPI } from '../services/api.service';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorAlert from '../components/ErrorAlert';
 import { Movie, MatchingUser, AdminUser } from '../types/movie';
@@ -472,38 +472,177 @@ const Home: React.FC = () => {
     </IonGrid>
   );
 
-  const renderMatchingUser = (matchingUser: MatchingUser) => (
-    <IonItem
-      key={matchingUser.userId}
-      className="premium-movie-card mb-4 border border-white/10 outline outline-2 outline-indigo-400/60"
-    >
-      <IonAvatar slot="start" className="w-16 h-16 border-2 border-indigo-400 shadow-lg">
-        <img
-          src={matchingUser.photoUrl || '/assets/images/avatar-placeholder.png'}
-          alt="Profile"
-          className="object-cover"
-        />
-      </IonAvatar>
-      <IonLabel>
-        <h2 className="font-bold text-white text-lg">{matchingUser.prenom} {matchingUser.nom}</h2>
-        <p className="text-sm text-gray-300 mt-1">
-          {matchingUser.commonMovies} film{matchingUser.commonMovies > 1 ? 's' : ''} en commun
-        </p>
-        <div className="flex items-center space-x-2 mt-1">
-          <IonBadge color="medium" className="text-xs">
-            {matchingUser.totalFavorites} favoris
-          </IonBadge>
-        </div>
-      </IonLabel>
-      <IonBadge
-        color="success"
-        slot="end"
-        className="text-sm font-bold px-3 py-2 rounded-full"
+  const handleSendMatchRequest = async (targetUserId: string) => {
+    try {
+      await moviesAPI.sendMatchRequest(targetUserId);
+      await loadMatchingUsers(); // Reload to update status
+      presentToast({
+        message: 'Demande de match envoyée !',
+        duration: 2000,
+        color: 'success',
+        position: 'top'
+      });
+    } catch (error: any) {
+      console.error('Error sending match request:', error);
+      const errorMessage = error.response?.data?.message || 'Erreur lors de l\'envoi de la demande';
+      presentToast({
+        message: errorMessage,
+        duration: 3000,
+        color: 'danger',
+        position: 'top'
+      });
+    }
+  };
+
+  const handleRespondToMatch = async (requestId: string, status: 'accepted' | 'declined') => {
+    console.log('🔄 Responding to match request:', { requestId, status });
+    try {
+      await moviesAPI.respondToMatchRequest(requestId, status);
+      await loadMatchingUsers(); // Reload to update status
+      presentToast({
+        message: status === 'accepted' ? 'Match accepté !' : 'Match refusé',
+        duration: 2000,
+        color: status === 'accepted' ? 'success' : 'medium',
+        position: 'top'
+      });
+    } catch (error: any) {
+      console.error('❌ Error responding to match request:', error);
+      console.error('Request ID was:', requestId);
+      const errorMessage = error.response?.data?.message || 'Erreur lors de la réponse';
+      presentToast({
+        message: errorMessage,
+        duration: 3000,
+        color: 'danger',
+        position: 'top'
+      });
+    }
+  };
+
+  const getMatchButtonProps = (matchingUser: MatchingUser) => {
+    const status = matchingUser.matchStatus || 'none';
+    const isSender = matchingUser.isSender;
+    
+    switch (status) {
+      case 'accepted':
+        return {
+          type: 'single' as const,
+          text: 'Matched',
+          color: 'success',
+          icon: heart,
+          disabled: true,
+          fill: 'solid' as const
+        };
+      case 'pending':
+        // If current user is the RECEIVER, show accept/decline buttons
+        if (!isSender) {
+          return {
+            type: 'double' as const,
+            requestId: matchingUser.matchRequestId
+          };
+        }
+        // If current user is the SENDER, show waiting status
+        return {
+          type: 'single' as const,
+          text: 'En attente',
+          color: 'warning',
+          icon: undefined,
+          disabled: true,
+          fill: 'outline' as const
+        };
+      case 'declined':
+      case 'none':
+      default:
+        return {
+          type: 'single' as const,
+          text: 'Match',
+          color: 'primary',
+          icon: undefined,
+          disabled: false,
+          fill: 'clear' as const
+        };
+    }
+  };
+
+  const renderMatchingUser = (matchingUser: MatchingUser) => {
+    const buttonProps = getMatchButtonProps(matchingUser);
+    
+    console.log('👤 Rendering matching user:', {
+      userId: matchingUser.userId,
+      name: `${matchingUser.prenom} ${matchingUser.nom}`,
+      matchStatus: matchingUser.matchStatus,
+      matchRequestId: matchingUser.matchRequestId,
+      isSender: matchingUser.isSender,
+      buttonType: buttonProps.type
+    });
+    
+    return (
+      <IonItem
+        key={matchingUser.userId}
+        className="premium-movie-card mb-4 border border-white/10 outline outline-2 outline-indigo-400/60"
       >
-        {matchingUser.similarity}%
-      </IonBadge>
-    </IonItem>
-  );
+        <IonAvatar slot="start" className="w-16 h-16 border-2 border-indigo-400 shadow-lg">
+          <img
+            src={matchingUser.photoUrl || '/assets/images/avatar-placeholder.png'}
+            alt="Profile"
+            className="object-cover"
+          />
+        </IonAvatar>
+        <IonLabel>
+          <h2 className="font-bold text-white text-lg">{matchingUser.prenom} {matchingUser.nom}</h2>
+          <p className="text-sm text-gray-300 mt-1">
+            {matchingUser.commonMovies} film{matchingUser.commonMovies > 1 ? 's' : ''} en commun
+          </p>
+          <div className="flex items-center space-x-2 mt-1">
+            <IonBadge color="medium" className="text-xs">
+              {matchingUser.totalFavorites} favoris
+            </IonBadge>
+          </div>
+        </IonLabel>
+        
+        {buttonProps.type === 'double' ? (
+          <div className="flex gap-2 mr-2">
+            <IonButton
+              color="success"
+              fill="solid"
+              size="small"
+              onClick={() => handleRespondToMatch(buttonProps.requestId!, 'accepted')}
+            >
+              <IonIcon icon={heart} slot="icon-only" />
+            </IonButton>
+            <IonButton
+              color="danger"
+              fill="outline"
+              size="small"
+              onClick={() => handleRespondToMatch(buttonProps.requestId!, 'declined')}
+            >
+              <IonIcon icon={close} slot="icon-only" />
+            </IonButton>
+          </div>
+        ) : (
+          <div className="mr-2">
+            <IonButton
+              color={buttonProps.color}
+              fill={buttonProps.fill}
+              size="small"
+              disabled={buttonProps.disabled}
+              onClick={() => handleSendMatchRequest(matchingUser.userId)}
+            >
+              {buttonProps.icon && <IonIcon icon={buttonProps.icon} slot="start" />}
+              {buttonProps.text}
+            </IonButton>
+          </div>
+        )}
+        
+        <IonBadge
+          color="success"
+          slot="end"
+          className="text-sm font-bold px-3 py-2 rounded-full"
+        >
+          {matchingUser.similarity}%
+        </IonBadge>
+      </IonItem>
+    );
+  };
 
   const renderAdminUser = (adminUser: AdminUser) => (
     <IonItem

@@ -66,6 +66,19 @@ let MoviesController = class MoviesController {
     async toggleUserStatus(userId) {
         return this.moviesService.toggleUserStatus(userId);
     }
+    async sendMatchRequest(req, targetUserId) {
+        return this.moviesService.sendMatchRequest(req.user.id, targetUserId);
+    }
+    async respondToMatchRequest(req, requestId, body) {
+        console.log('📥 Controller received respond request:');
+        console.log('   Request ID:', requestId);
+        console.log('   User from JWT:', req.user);
+        console.log('   Status:', body.status);
+        return this.moviesService.respondToMatchRequest(requestId, req.user.id, body.status);
+    }
+    async getMatchRequests(req) {
+        return this.moviesService.getMatchRequests(req.user.id);
+    }
 };
 exports.MoviesController = MoviesController;
 __decorate([
@@ -155,6 +168,35 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], MoviesController.prototype, "toggleUserStatus", null);
+__decorate([
+    (0, common_1.UseGuards)(auth_guard_1.JwtAuthGuard),
+    (0, common_1.Post)('match-request/:targetUserId'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('targetUserId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], MoviesController.prototype, "sendMatchRequest", null);
+__decorate([
+    (0, common_1.UseGuards)(auth_guard_1.JwtAuthGuard),
+    (0, common_1.Post)('match-request/:requestId/respond'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('requestId')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Object]),
+    __metadata("design:returntype", Promise)
+], MoviesController.prototype, "respondToMatchRequest", null);
+__decorate([
+    (0, common_1.UseGuards)(auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('match-requests'),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], MoviesController.prototype, "getMatchRequests", null);
 exports.MoviesController = MoviesController = __decorate([
     (0, common_1.Controller)('movies'),
     __metadata("design:paramtypes", [movies_service_1.MoviesService])

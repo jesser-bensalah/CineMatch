@@ -11,6 +11,17 @@ export interface MatchingUser {
     similarity: number;
     commonMovies: number;
     totalFavorites: number;
+    matchStatus?: 'none' | 'pending' | 'accepted' | 'declined';
+    matchRequestId?: string;
+    isSender?: boolean;
+}
+export interface MatchRequest {
+    id: string;
+    fromUserId: string;
+    toUserId: string;
+    status: 'pending' | 'accepted' | 'declined';
+    createdAt: string;
+    updatedAt: string;
 }
 export declare class MoviesService {
     private firebaseService;
@@ -70,5 +81,30 @@ export declare class MoviesService {
     toggleUserStatus(userId: string): Promise<{
         message: string;
         isActive: boolean;
+    }>;
+    sendMatchRequest(fromUserId: string, toUserId: string): Promise<{
+        id: any;
+        message: string;
+    }>;
+    respondToMatchRequest(requestId: string, userId: string, status: 'accepted' | 'declined'): Promise<{
+        message: string;
+        status: "accepted" | "declined";
+    }>;
+    getMatchRequests(userId: string): Promise<{
+        id: any;
+        fromUserId: any;
+        fromUserName: string;
+        fromUserPhoto: any;
+        status: any;
+        createdAt: any;
+    }[]>;
+    getMatchStatus(userId: string, otherUserId: string): Promise<{
+        status: string;
+        requestId: null;
+        isSender?: undefined;
+    } | {
+        status: any;
+        requestId: any;
+        isSender: boolean;
     }>;
 }

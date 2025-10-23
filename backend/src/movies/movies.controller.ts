@@ -113,4 +113,36 @@ export class MoviesController {
   async toggleUserStatus(@Param('userId') userId: string) {
     return this.moviesService.toggleUserStatus(userId);
   }
+
+  // Match Request Routes
+  @UseGuards(JwtAuthGuard)
+  @Post('match-request/:targetUserId')
+  @HttpCode(HttpStatus.CREATED)
+  async sendMatchRequest(
+    @Req() req: Request,
+    @Param('targetUserId') targetUserId: string
+  ) {
+    return this.moviesService.sendMatchRequest((req as any).user.id, targetUserId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('match-request/:requestId/respond')
+  @HttpCode(HttpStatus.OK)
+  async respondToMatchRequest(
+    @Req() req: Request,
+    @Param('requestId') requestId: string,
+    @Body() body: { status: 'accepted' | 'declined' }
+  ) {
+    console.log('📥 Controller received respond request:');
+    console.log('   Request ID:', requestId);
+    console.log('   User from JWT:', (req as any).user);
+    console.log('   Status:', body.status);
+    return this.moviesService.respondToMatchRequest(requestId, (req as any).user.id, body.status);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('match-requests')
+  async getMatchRequests(@Req() req: Request) {
+    return this.moviesService.getMatchRequests((req as any).user.id);
+  }
 }

@@ -41,6 +41,9 @@ export interface MatchingUser {
   similarity: number;
   commonMovies: number;
   totalFavorites: number;
+  matchStatus?: 'none' | 'pending' | 'accepted' | 'declined';
+  matchRequestId?: string;
+  isSender?: boolean;
 }
 
 export interface AdminUser {

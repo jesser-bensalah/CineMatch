@@ -203,6 +203,7 @@ let MoviesService = class MoviesService {
             console.log(`   - Similarity: ${Math.round(similarity * 100)}% (threshold: ${Math.round(threshold * 100)}%)`);
             if (similarity >= threshold) {
                 console.log(`   ✅ MATCH! Adding to results`);
+                const matchStatus = await this.getMatchStatus(userId, user.id);
                 matchingUsers.push({
                     userId: user.id,
                     nom: user.nom,
@@ -210,7 +211,10 @@ let MoviesService = class MoviesService {
                     photoUrl: user.photoUrl,
                     similarity: Math.round(similarity * 100),
                     commonMovies: intersection.size,
-                    totalFavorites: userFavorites.length
+                    totalFavorites: userFavorites.length,
+                    matchStatus: matchStatus.status,
+                    matchRequestId: matchStatus.requestId,
+                    isSender: matchStatus.isSender
                 });
             }
             else {
@@ -254,6 +258,108 @@ let MoviesService = class MoviesService {
         return {
             message: `Utilisateur ${newStatus ? 'activé' : 'désactivé'}`,
             isActive: newStatus
+        };
+    }
+    async sendMatchRequest(fromUserId, toUserId) {
+        const fromUser = await this.firebaseService.findById('users', fromUserId);
+        const toUser = await this.firebaseService.findById('users', toUserId);
+        if (!fromUser || !toUser) {
+            throw new common_1.NotFoundException('Utilisateur non trouvé');
+        }
+        const existingRequests = await this.firebaseService.findAll('matchRequests');
+        const existing = existingRequests.find((req) => (req.fromUserId === fromUserId && req.toUserId === toUserId) ||
+            (req.fromUserId === toUserId && req.toUserId === fromUserId));
+        if (existing) {
+            if (existing.status === 'pending') {
+                throw new common_1.BadRequestException('Une demande est déjà en attente');
+            }
+            if (existing.status === 'accepted') {
+                throw new common_1.BadRequestException('Vous êtes déjà matchés');
+            }
+            if (existing.status === 'declined') {
+                await this.firebaseService.update('matchRequests', existing.id, {
+                    status: 'pending',
+                    fromUserId,
+                    toUserId,
+                    updatedAt: new Date().toISOString()
+                });
+                return {
+                    id: existing.id,
+                    message: 'Demande de match envoyée'
+                };
+            }
+        }
+        const matchRequest = {
+            fromUserId,
+            toUserId,
+            status: 'pending',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        const requestRef = await this.firebaseService.create('matchRequests', matchRequest);
+        return {
+            id: requestRef.id,
+            message: 'Demande de match envoyée'
+        };
+    }
+    async respondToMatchRequest(requestId, userId, status) {
+        const requestDoc = await this.firebaseService.doc('matchRequests', requestId).get();
+        if (!requestDoc.exists) {
+            throw new common_1.NotFoundException('Demande non trouvée');
+        }
+        const request = requestDoc.data();
+        if (!request) {
+            throw new common_1.NotFoundException('Données de la demande introuvables');
+        }
+        console.log('🔍 Respond to match request:');
+        console.log('   Request ID:', requestId);
+        console.log('   Current User ID:', userId);
+        console.log('   Request fromUserId:', request.fromUserId);
+        console.log('   Request toUserId:', request.toUserId);
+        console.log('   Request status:', request.status);
+        if (request.toUserId !== userId) {
+            console.log('❌ FORBIDDEN: User is not the recipient');
+            throw new common_1.ForbiddenException('Vous ne pouvez pas répondre à cette demande');
+        }
+        if (request.status !== 'pending') {
+            throw new common_1.BadRequestException('Cette demande a déjà été traitée');
+        }
+        await this.firebaseService.update('matchRequests', requestId, {
+            status,
+            updatedAt: new Date().toISOString()
+        });
+        return {
+            message: status === 'accepted' ? 'Match accepté' : 'Match refusé',
+            status
+        };
+    }
+    async getMatchRequests(userId) {
+        const allRequests = await this.firebaseService.findAll('matchRequests');
+        const receivedRequests = allRequests.filter((req) => req.toUserId === userId && req.status === 'pending');
+        const requestsWithDetails = await Promise.all(receivedRequests.map(async (req) => {
+            const fromUser = await this.firebaseService.findById('users', req.fromUserId);
+            return {
+                id: req.id,
+                fromUserId: req.fromUserId,
+                fromUserName: `${fromUser.prenom} ${fromUser.nom}`,
+                fromUserPhoto: fromUser.photoUrl,
+                status: req.status,
+                createdAt: req.createdAt
+            };
+        }));
+        return requestsWithDetails;
+    }
+    async getMatchStatus(userId, otherUserId) {
+        const allRequests = await this.firebaseService.findAll('matchRequests');
+        const matchRequest = allRequests.find((req) => (req.fromUserId === userId && req.toUserId === otherUserId) ||
+            (req.fromUserId === otherUserId && req.toUserId === userId));
+        if (!matchRequest) {
+            return { status: 'none', requestId: null };
+        }
+        return {
+            status: matchRequest.status,
+            requestId: matchRequest.id,
+            isSender: matchRequest.fromUserId === userId
         };
     }
 };

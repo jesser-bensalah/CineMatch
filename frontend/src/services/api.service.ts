@@ -146,6 +146,15 @@ export const moviesAPI = {
 
   getMatchingUsers: () =>
     api.get<MatchingUser[]>('/movies/matching-users'),
+
+  sendMatchRequest: (targetUserId: string) =>
+    api.post(`/movies/match-request/${targetUserId}`),
+
+  respondToMatchRequest: (requestId: string, status: 'accepted' | 'declined') =>
+    api.post(`/movies/match-request/${requestId}/respond`, { status }),
+
+  getMatchRequests: () =>
+    api.get('/movies/match-requests'),
 };
 
 
