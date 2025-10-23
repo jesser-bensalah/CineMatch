@@ -148,13 +148,19 @@ export const moviesAPI = {
     api.get<MatchingUser[]>('/movies/matching-users'),
 
   sendMatchRequest: (targetUserId: string) =>
-    api.post(`/movies/match-request/${targetUserId}`),
+    api.post(`/movies/match-requests/${targetUserId}`),
 
   respondToMatchRequest: (requestId: string, status: 'accepted' | 'declined') =>
-    api.post(`/movies/match-request/${requestId}/respond`, { status }),
+    api.post(`/movies/match-requests/${requestId}/respond`, { status }),
 
   getMatchRequests: () =>
     api.get('/movies/match-requests'),
+    
+  cancelMatchRequest: (requestId: string) =>
+    api.delete(`/movies/match-requests/${requestId}`),
+    
+  unmatch: (requestId: string) =>
+    api.delete(`/movies/match-requests/${requestId}/unmatch`),
 };
 
 

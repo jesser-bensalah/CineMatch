@@ -79,6 +79,21 @@ let MoviesController = class MoviesController {
     async getMatchRequests(req) {
         return this.moviesService.getMatchRequests(req.user.id);
     }
+    async cancelMatchRequest(req, requestId) {
+        console.log('🔍 [cancelMatchRequest] Received request:', {
+            method: req.method,
+            url: req.url,
+            originalUrl: req.originalUrl,
+            path: req.path,
+            params: req.params,
+            user: req.user,
+            headers: req.headers
+        });
+        return this.moviesService.cancelMatchRequest(requestId, req.user.id);
+    }
+    async unmatch(req, requestId) {
+        return this.moviesService.unmatch(requestId, req.user.id);
+    }
 };
 exports.MoviesController = MoviesController;
 __decorate([
@@ -170,7 +185,7 @@ __decorate([
 ], MoviesController.prototype, "toggleUserStatus", null);
 __decorate([
     (0, common_1.UseGuards)(auth_guard_1.JwtAuthGuard),
-    (0, common_1.Post)('match-request/:targetUserId'),
+    (0, common_1.Post)('match-requests/:targetUserId'),
     (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Param)('targetUserId')),
@@ -180,7 +195,7 @@ __decorate([
 ], MoviesController.prototype, "sendMatchRequest", null);
 __decorate([
     (0, common_1.UseGuards)(auth_guard_1.JwtAuthGuard),
-    (0, common_1.Post)('match-request/:requestId/respond'),
+    (0, common_1.Post)('match-requests/:requestId/respond'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Param)('requestId')),
@@ -197,6 +212,26 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], MoviesController.prototype, "getMatchRequests", null);
+__decorate([
+    (0, common_1.UseGuards)(auth_guard_1.JwtAuthGuard),
+    (0, common_1.Delete)('match-requests/:requestId'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('requestId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], MoviesController.prototype, "cancelMatchRequest", null);
+__decorate([
+    (0, common_1.UseGuards)(auth_guard_1.JwtAuthGuard),
+    (0, common_1.Delete)('match-requests/:requestId/unmatch'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('requestId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], MoviesController.prototype, "unmatch", null);
 exports.MoviesController = MoviesController = __decorate([
     (0, common_1.Controller)('movies'),
     __metadata("design:paramtypes", [movies_service_1.MoviesService])

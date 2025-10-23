@@ -116,7 +116,7 @@ export class MoviesController {
 
   // Match Request Routes
   @UseGuards(JwtAuthGuard)
-  @Post('match-request/:targetUserId')
+  @Post('match-requests/:targetUserId')
   @HttpCode(HttpStatus.CREATED)
   async sendMatchRequest(
     @Req() req: Request,
@@ -126,7 +126,7 @@ export class MoviesController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Post('match-request/:requestId/respond')
+  @Post('match-requests/:requestId/respond')
   @HttpCode(HttpStatus.OK)
   async respondToMatchRequest(
     @Req() req: Request,
@@ -144,5 +144,34 @@ export class MoviesController {
   @Get('match-requests')
   async getMatchRequests(@Req() req: Request) {
     return this.moviesService.getMatchRequests((req as any).user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('match-requests/:requestId')
+  @HttpCode(HttpStatus.OK)
+  async cancelMatchRequest(
+    @Req() req: Request,
+    @Param('requestId') requestId: string
+  ) {
+    console.log('🔍 [cancelMatchRequest] Received request:', {
+      method: req.method,
+      url: req.url,
+      originalUrl: (req as any).originalUrl,
+      path: req.path,
+      params: req.params,
+      user: (req as any).user,
+      headers: req.headers
+    });
+    return this.moviesService.cancelMatchRequest(requestId, (req as any).user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('match-requests/:requestId/unmatch')
+  @HttpCode(HttpStatus.OK)
+  async unmatch(
+    @Req() req: Request,
+    @Param('requestId') requestId: string
+  ) {
+    return this.moviesService.unmatch(requestId, (req as any).user.id);
   }
 }

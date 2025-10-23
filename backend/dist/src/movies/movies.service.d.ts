@@ -86,6 +86,10 @@ export declare class MoviesService {
         id: any;
         message: string;
     }>;
+    cancelMatchRequest(requestId: string, userId: string): Promise<{
+        message: string;
+        requestId: string;
+    }>;
     respondToMatchRequest(requestId: string, userId: string, status: 'accepted' | 'declined'): Promise<{
         message: string;
         status: "accepted" | "declined";
@@ -98,6 +102,10 @@ export declare class MoviesService {
         status: any;
         createdAt: any;
     }[]>;
+    unmatch(requestId: string, userId: string): Promise<{
+        message: string;
+        requestId: string;
+    }>;
     getMatchStatus(userId: string, otherUserId: string): Promise<{
         status: string;
         requestId: null;

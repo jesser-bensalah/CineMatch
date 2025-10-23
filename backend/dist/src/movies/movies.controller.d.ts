@@ -74,5 +74,13 @@ export declare class MoviesController {
         status: any;
         createdAt: any;
     }[]>;
+    cancelMatchRequest(req: Request, requestId: string): Promise<{
+        message: string;
+        requestId: string;
+    }>;
+    unmatch(req: Request, requestId: string): Promise<{
+        message: string;
+        requestId: string;
+    }>;
 }
 export {};

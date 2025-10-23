@@ -1,10 +1,21 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { Request, Response, NextFunction } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Add request logging middleware
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`, {
+      headers: req.headers,
+      params: req.params,
+      query: req.query,
+      body: req.body
+    });
+    next();
+  });
   
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,

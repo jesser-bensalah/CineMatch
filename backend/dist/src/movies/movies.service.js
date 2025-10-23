@@ -302,6 +302,24 @@ let MoviesService = class MoviesService {
             message: 'Demande de match envoyée'
         };
     }
+    async cancelMatchRequest(requestId, userId) {
+        const requestDoc = await this.firebaseService.doc('matchRequests', requestId).get();
+        if (!requestDoc.exists) {
+            throw new common_1.NotFoundException('Demande de match non trouvée');
+        }
+        const request = { id: requestDoc.id, ...requestDoc.data() };
+        if (request.fromUserId !== userId) {
+            throw new common_1.ForbiddenException('Vous ne pouvez pas annuler cette demande');
+        }
+        if (request.status !== 'pending') {
+            throw new common_1.BadRequestException('Cette demande ne peut plus être annulée');
+        }
+        await this.firebaseService.doc('matchRequests', requestId).delete();
+        return {
+            message: 'Demande de match annulée avec succès',
+            requestId: requestId
+        };
+    }
     async respondToMatchRequest(requestId, userId, status) {
         const requestDoc = await this.firebaseService.doc('matchRequests', requestId).get();
         if (!requestDoc.exists) {
@@ -348,6 +366,21 @@ let MoviesService = class MoviesService {
             };
         }));
         return requestsWithDetails;
+    }
+    async unmatch(requestId, userId) {
+        const requestDoc = await this.firebaseService.doc('matchRequests', requestId).get();
+        if (!requestDoc.exists) {
+            throw new common_1.NotFoundException('Match non trouvé');
+        }
+        const request = { id: requestDoc.id, ...requestDoc.data() };
+        if (request.fromUserId !== userId && request.toUserId !== userId) {
+            throw new common_1.ForbiddenException('Vous ne pouvez pas annuler ce match');
+        }
+        await this.firebaseService.doc('matchRequests', requestId).delete();
+        return {
+            message: 'Match annulé avec succès',
+            requestId: requestId
+        };
     }
     async getMatchStatus(userId, otherUserId) {
         const allRequests = await this.firebaseService.findAll('matchRequests');

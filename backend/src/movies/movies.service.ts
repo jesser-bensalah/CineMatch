@@ -397,6 +397,34 @@ export class MoviesService {
     };
   }
 
+  async cancelMatchRequest(requestId: string, userId: string) {
+    const requestDoc = await this.firebaseService.doc('matchRequests', requestId).get();
+    
+    if (!requestDoc.exists) {
+      throw new NotFoundException('Demande de match non trouvée');
+    }
+
+    const request = { id: requestDoc.id, ...requestDoc.data() } as MatchRequest;
+
+    // Vérifier que l'utilisateur est bien l'expéditeur de la demande
+    if (request.fromUserId !== userId) {
+      throw new ForbiddenException('Vous ne pouvez pas annuler cette demande');
+    }
+
+    // Vérifier que la demande est toujours en attente
+    if (request.status !== 'pending') {
+      throw new BadRequestException('Cette demande ne peut plus être annulée');
+    }
+
+    // Supprimer la demande
+    await this.firebaseService.doc('matchRequests', requestId).delete();
+
+    return {
+      message: 'Demande de match annulée avec succès',
+      requestId: requestId
+    };
+  }
+
   async respondToMatchRequest(requestId: string, userId: string, status: 'accepted' | 'declined') {
     // Use doc().get() directly to get match request data
     const requestDoc = await this.firebaseService.doc('matchRequests', requestId).get();
@@ -463,6 +491,29 @@ export class MoviesService {
     );
 
     return requestsWithDetails;
+  }
+
+  async unmatch(requestId: string, userId: string) {
+    const requestDoc = await this.firebaseService.doc('matchRequests', requestId).get();
+    
+    if (!requestDoc.exists) {
+      throw new NotFoundException('Match non trouvé');
+    }
+
+    const request = { id: requestDoc.id, ...requestDoc.data() } as MatchRequest;
+
+    // Vérifier que l'utilisateur fait partie du match
+    if (request.fromUserId !== userId && request.toUserId !== userId) {
+      throw new ForbiddenException('Vous ne pouvez pas annuler ce match');
+    }
+
+    // Supprimer la demande de match
+    await this.firebaseService.doc('matchRequests', requestId).delete();
+
+    return {
+      message: 'Match annulé avec succès',
+      requestId: requestId
+    };
   }
 
   async getMatchStatus(userId: string, otherUserId: string) {

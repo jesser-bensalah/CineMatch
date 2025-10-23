@@ -59,6 +59,7 @@ import {
   logOutOutline,
   people,
   create,
+  closeCircle,
 } from 'ionicons/icons';
 import { useAuth } from '../hooks/useAuth';
 import { useMovies } from '../hooks/useMovies';
@@ -66,6 +67,7 @@ import { adminAPI, moviesAPI } from '../services/api.service';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorAlert from '../components/ErrorAlert';
 import { Movie, MatchingUser, AdminUser } from '../types/movie';
+
 
 const Home: React.FC = () => {
   const { user, logout } = useAuth();
@@ -518,54 +520,137 @@ const Home: React.FC = () => {
     }
   };
 
-  const getMatchButtonProps = (matchingUser: MatchingUser) => {
-    const status = matchingUser.matchStatus || 'none';
-    const isSender = matchingUser.isSender;
+ const handleCancelMatchRequest = async (requestId: string) => {
+  if (!requestId) {
+    console.error('No request ID provided for cancellation');
+    presentToast({
+      message: 'Erreur: ID de demande manquant',
+      duration: 3000,
+      color: 'danger',
+      position: 'top'
+    });
+    return;
+  }
+
+  try {
+    const response = await moviesAPI.cancelMatchRequest(requestId);
+    console.log('Cancel response:', response);
     
-    switch (status) {
-      case 'accepted':
-        return {
-          type: 'single' as const,
-          text: 'Matched',
-          color: 'success',
-          icon: heart,
-          disabled: true,
-          fill: 'solid' as const
-        };
-      case 'pending':
-        // If current user is the RECEIVER, show accept/decline buttons
-        if (!isSender) {
-          return {
-            type: 'double' as const,
-            requestId: matchingUser.matchRequestId
-          };
-        }
-        // If current user is the SENDER, show waiting status
-        return {
-          type: 'single' as const,
-          text: 'En attente',
-          color: 'warning',
-          icon: undefined,
-          disabled: true,
-          fill: 'outline' as const
-        };
-      case 'declined':
-      case 'none':
-      default:
-        return {
-          type: 'single' as const,
-          text: 'Match',
-          color: 'primary',
-          icon: undefined,
-          disabled: false,
-          fill: 'clear' as const
-        };
+    await loadMatchingUsers(); // Reload to update status
+    presentToast({
+      message: 'Demande de match annulée avec succès',
+      duration: 2000,
+      color: 'success',
+      position: 'top'
+    });
+  } catch (error: any) {
+    console.error('Error canceling match request:', error);
+    const errorMessage = error.response?.data?.message || 'Erreur lors de l\'annulation de la demande';
+    console.error('Error details:', error.response?.data);
+    
+    presentToast({
+      message: errorMessage,
+      duration: 3000,
+      color: 'danger',
+      position: 'top'
+    });
+  }
+};
+
+  const handleUnmatch = async (requestId: string) => {
+    if (!requestId) {
+      console.error('No request ID provided for unmatch');
+      presentToast({
+        message: 'Erreur: ID de match manquant',
+        duration: 3000,
+        color: 'danger',
+        position: 'top'
+      });
+      return;
+    }
+
+    try {
+      await moviesAPI.unmatch(requestId);
+      await loadMatchingUsers(); // Reload to update status
+      presentToast({
+        message: 'Match annulé avec succès',
+        duration: 2000,
+        color: 'success',
+        position: 'top'
+      });
+    } catch (error: any) {
+      console.error('Error unmatching:', error);
+      const errorMessage = error.response?.data?.message || 'Erreur lors de l\'annulation du match';
+      presentToast({
+        message: errorMessage,
+        duration: 3000,
+        color: 'danger',
+        position: 'top'
+      });
     }
   };
 
-  const renderMatchingUser = (matchingUser: MatchingUser) => {
-    const buttonProps = getMatchButtonProps(matchingUser);
+  const getMatchButtonProps = (matchingUser: MatchingUser) => {
+    const status = matchingUser.matchStatus || 'none';
+    const isSender = matchingUser.isSender === true;
     
+    console.log('Match button props:', {
+      status,
+      isSender,
+      requestId: matchingUser.matchRequestId,
+      userId: matchingUser.userId
+    });
+      
+    switch (status) {
+      case 'accepted':
+        return {
+          type: 'unmatch' as const,
+          text: 'Unmatch',
+          color: 'danger',
+          requestId: matchingUser.matchRequestId || '',
+          handler: () => {
+            if (matchingUser.matchRequestId) {
+              handleUnmatch(matchingUser.matchRequestId);
+            }
+          }
+        };
+    case 'pending':
+      // If current user is the SENDER, show cancel button
+      if (isSender) {
+        return {
+          type: 'cancel' as const,  // New type for cancel button
+          text: 'Annuler la demande',
+          color: 'medium',
+          requestId: matchingUser.matchRequestId || '',
+          handler: () => {
+            if (matchingUser.matchRequestId) {
+              handleCancelMatchRequest(matchingUser.matchRequestId);
+            }
+          }
+        };
+      }
+      // If current user is the RECEIVER, show accept/decline buttons
+      return {
+        type: 'double' as const,
+        requestId: matchingUser.matchRequestId || ''
+      };
+    case 'declined':
+    case 'none':
+    default:
+      return {
+        type: 'single' as const,
+        text: 'Match',
+        color: 'primary',
+        icon: undefined,
+        disabled: false,
+        fill: 'clear' as const
+      };
+  }
+};
+
+  const renderMatchingUser = (matchingUser: MatchingUser) => {
+  const buttonProps = getMatchButtonProps(matchingUser);
+
     console.log('👤 Rendering matching user:', {
       userId: matchingUser.userId,
       name: `${matchingUser.prenom} ${matchingUser.nom}`,
@@ -575,11 +660,11 @@ const Home: React.FC = () => {
       buttonType: buttonProps.type
     });
     
-    return (
-      <IonItem
-        key={matchingUser.userId}
-        className="premium-movie-card mb-4 border border-white/10 outline outline-2 outline-indigo-400/60"
-      >
+     return (
+    <IonItem
+      key={matchingUser.userId}
+      className="premium-movie-card mb-4 border border-white/10 outline outline-2 outline-indigo-400/60"
+    >
         <IonAvatar slot="start" className="w-16 h-16 border-2 border-indigo-400 shadow-lg">
           <img
             src={matchingUser.photoUrl || '/assets/images/avatar-placeholder.png'}
@@ -599,39 +684,66 @@ const Home: React.FC = () => {
           </div>
         </IonLabel>
         
-        {buttonProps.type === 'double' ? (
-          <div className="flex gap-2 mr-2">
-            <IonButton
-              color="success"
-              fill="solid"
-              size="small"
-              onClick={() => handleRespondToMatch(buttonProps.requestId!, 'accepted')}
-            >
-              <IonIcon icon={heart} slot="icon-only" />
-            </IonButton>
-            <IonButton
-              color="danger"
-              fill="outline"
-              size="small"
-              onClick={() => handleRespondToMatch(buttonProps.requestId!, 'declined')}
-            >
-              <IonIcon icon={close} slot="icon-only" />
-            </IonButton>
-          </div>
-        ) : (
-          <div className="mr-2">
-            <IonButton
-              color={buttonProps.color}
-              fill={buttonProps.fill}
-              size="small"
-              disabled={buttonProps.disabled}
-              onClick={() => handleSendMatchRequest(matchingUser.userId)}
-            >
-              {buttonProps.icon && <IonIcon icon={buttonProps.icon} slot="start" />}
-              {buttonProps.text}
-            </IonButton>
-          </div>
-        )}
+         {buttonProps.type === 'double' ? (
+        <div className="flex gap-2 mr-2">
+          <IonButton
+            color="success"
+            fill="solid"
+            size="small"
+            onClick={() => handleRespondToMatch(buttonProps.requestId!, 'accepted')}
+          >
+            <IonIcon icon={heart} slot="icon-only" />
+          </IonButton>
+          <IonButton
+            color="danger"
+            fill="outline"
+            size="small"
+            onClick={() => handleRespondToMatch(buttonProps.requestId!, 'declined')}
+          >
+            <IonIcon icon={close} slot="icon-only" />
+          </IonButton>
+        </div>
+      ) : buttonProps.type === 'cancel' ? (
+        // Cancel button for pending requests
+        <div className="mr-2">
+          <IonButton
+            color={buttonProps.color}
+            fill="outline"
+            size="small"
+            onClick={buttonProps.handler}
+          >
+            <IonIcon icon={close} slot="start" />
+            {buttonProps.text}
+          </IonButton>
+        </div>
+      ) : buttonProps.type === 'unmatch' ? (
+        // Unmatch button for accepted matches
+        <div className="mr-2">
+          <IonButton
+            color={buttonProps.color}
+            fill="outline"
+            size="small"
+            onClick={buttonProps.handler}
+          >
+            <IonIcon icon={closeCircle} slot="start" />
+            {buttonProps.text}
+          </IonButton>
+        </div>
+      ) : (
+        // Default match button
+        <div className="mr-2">
+          <IonButton
+            color={buttonProps.color}
+            fill={buttonProps.fill}
+            size="small"
+            disabled={buttonProps.disabled}
+            onClick={() => handleSendMatchRequest(matchingUser.userId)}
+          >
+            {buttonProps.icon && <IonIcon icon={buttonProps.icon} slot="start" />}
+            {buttonProps.text}
+          </IonButton>
+        </div>
+      )}
         
         <IonBadge
           color="success"
