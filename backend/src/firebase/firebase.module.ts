@@ -3,7 +3,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as admin from 'firebase-admin';
 
 @Global()
-@Module({})
+@Module({
+  imports: [ConfigModule],
+})
 export class FirebaseModule {
   constructor(private configService: ConfigService) {
     this.initializeFirebase();
@@ -19,18 +21,17 @@ export class FirebaseModule {
         throw new Error('Firebase configuration is missing');
       }
 
-      const serviceAccount = {
-        projectId,
-        privateKey: privateKey.replace(/\\n/g, '\n'),
-        clientEmail,
-      };
+      const formattedPrivateKey = privateKey.replace(/\\n/g, '\n');
 
       admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
-        databaseURL: `https://${serviceAccount.projectId}.firebaseio.com`,
+        credential: admin.credential.cert({
+          projectId,
+          privateKey: formattedPrivateKey,
+          clientEmail,
+        }),
+        databaseURL: `https://${projectId}.firebaseio.com`,
       });
 
-      
       const db = admin.firestore();
       db.settings({
         ignoreUndefinedProperties: true,

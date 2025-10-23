@@ -4,21 +4,17 @@ import {
   IonCardHeader,
   IonCardTitle,
   IonCardContent,
-  IonCardSubtitle,
   IonImg,
-  IonButton,
   IonIcon,
+  IonButton,
   IonText,
   IonModal,
   IonHeader,
   IonToolbar,
   IonTitle,
-  IonContent,
-  IonChip,
-  IonBadge,
-  IonLabel
+  IonContent
 } from '@ionic/react';
-import { heart, heartOutline, star, close, calendar, globe, informationCircle, time, film, people } from 'ionicons/icons';
+import { heart, heartOutline, star, close, calendar, globe, informationCircle, film, people } from 'ionicons/icons';
 import { Movie } from '../types/movie';
 
 interface MovieCardProps {
@@ -56,15 +52,15 @@ const MovieCard: React.FC<MovieCardProps> = ({
 
   const getMoviePoster = (movie: Movie) => {
     if (imageError || !movie.poster_path) return '/assets/images/no-poster.jpg';
-    
+
     if (movie.poster_path.startsWith('http') || movie.poster_path.startsWith('data:')) {
       return movie.poster_path;
     }
-    
+
     if (movie.poster_path.includes('cloudinary') || movie.poster_path.includes('res.cloudinary.com')) {
       return movie.poster_path;
     }
-    
+
     return `https://image.tmdb.org/t/p/w500${movie.poster_path}`;
   };
 
@@ -110,7 +106,7 @@ const MovieCard: React.FC<MovieCardProps> = ({
       {/* Carte de film améliorée avec thème cinéma */}
       <IonCard className="movie-card-premium rounded-2xl overflow-hidden shadow-2xl border-0 h-full flex flex-col group cursor-pointer transition-all duration-500 hover:scale-105 bg-gradient-to-br from-gray-900 to-gray-800">
         <div className="relative overflow-hidden flex-1">
-  
+
           <div className="relative h-48 overflow-hidden">
             <IonImg
               src={getMoviePoster(movie)}
@@ -118,7 +114,7 @@ const MovieCard: React.FC<MovieCardProps> = ({
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
               onIonError={handleImageError}
             />
-            
+
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
 
             <div className="absolute top-3 right-3">
@@ -126,11 +122,10 @@ const MovieCard: React.FC<MovieCardProps> = ({
                 fill="solid"
                 size="small"
                 onClick={handleFavoriteClick}
-                className={`rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 backdrop-blur-sm ${
-                  isFavorite 
-                    ? 'bg-red-500 hover:bg-red-600 border-2 border-red-300' 
+                className={`rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 backdrop-blur-sm ${isFavorite
+                    ? 'bg-red-500 hover:bg-red-600 border-2 border-red-300'
                     : 'bg-black/70 hover:bg-black/90 border-2 border-white/30 text-white/80 hover:text-white'
-                }`}
+                  }`}
               >
                 <IonIcon
                   icon={isFavorite ? heart : heartOutline}
@@ -138,7 +133,7 @@ const MovieCard: React.FC<MovieCardProps> = ({
                 />
               </IonButton>
             </div>
-            
+
             {/* Badge de note */}
             {showRating && movie.vote_average && movie.vote_average > 0 && (
               <div className={`absolute top-3 left-3 ${getRatingColor(movie.vote_average)} text-white px-3 py-1 rounded-full font-bold flex items-center space-x-1 shadow-lg border-2 border-white/20`}>
@@ -146,14 +141,14 @@ const MovieCard: React.FC<MovieCardProps> = ({
                 <span className="text-sm">{movie.vote_average.toFixed(1)}</span>
               </div>
             )}
-            
+
             {/* Badge film admin */}
             {movie.isAdminMovie && (
               <div className="absolute bottom-3 left-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs px-3 py-1 rounded-full font-semibold backdrop-blur-sm border border-blue-300/30">
                 🎬 CineMatch
               </div>
             )}
-            
+
             {/* Année */}
             {showYear && movie.release_date && (
               <div className="absolute bottom-3 right-3 bg-black/80 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm border border-white/20">
@@ -161,13 +156,13 @@ const MovieCard: React.FC<MovieCardProps> = ({
               </div>
             )}
           </div>
-          
+
           {/* Contenu texte */}
           <IonCardHeader className="p-4 pb-2">
             <IonCardTitle className="text-white font-bold text-base line-clamp-2 leading-tight min-h-[3rem] group-hover:text-yellow-300 transition-colors duration-300">
               {movie.title}
             </IonCardTitle>
-            
+
             {/* Métadonnées */}
             <div className="flex items-center justify-between mt-2">
               {movie.release_date && (
@@ -176,7 +171,7 @@ const MovieCard: React.FC<MovieCardProps> = ({
                   {new Date(movie.release_date).getFullYear()}
                 </div>
               )}
-              
+
               {movie.original_language && movie.original_language !== 'fr' && (
                 <div className="text-xs text-gray-400 uppercase bg-white/10 px-2 py-1 rounded-full">
                   {movie.original_language}
@@ -184,13 +179,13 @@ const MovieCard: React.FC<MovieCardProps> = ({
               )}
             </div>
           </IonCardHeader>
-          
+
           <IonCardContent className="p-4 pt-0 flex-1 flex flex-col">
             {/* Genres avec style amélioré */}
             {genreNames.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-3">
                 {genreNames.map((genre, index) => (
-                  <span 
+                  <span
                     key={index}
                     className="inline-block bg-yellow-500/20 text-yellow-300 text-xs px-2 py-1 rounded-full border border-yellow-400/30 backdrop-blur-sm"
                   >
@@ -199,7 +194,7 @@ const MovieCard: React.FC<MovieCardProps> = ({
                 ))}
               </div>
             )}
-            
+
             {/* Description */}
             {movie.overview && (
               <IonText>
@@ -208,7 +203,7 @@ const MovieCard: React.FC<MovieCardProps> = ({
                 </p>
               </IonText>
             )}
-            
+
             {/* Bouton détails amélioré */}
             <div className="flex-shrink-0 mt-auto">
               <IonButton
@@ -224,7 +219,7 @@ const MovieCard: React.FC<MovieCardProps> = ({
             </div>
           </IonCardContent>
         </div>
-        
+
         {/* Effet de bordure lumineuse au survol */}
         <div className="absolute inset-0 border-2 border-transparent group-hover:border-yellow-400/40 rounded-2xl transition-all duration-300 pointer-events-none"></div>
       </IonCard>
@@ -262,7 +257,7 @@ const MovieCard: React.FC<MovieCardProps> = ({
                 onIonError={handleImageError}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-              
+
               {/* Informations overlay */}
               <div className="absolute bottom-4 left-4 right-4">
                 <div className="flex justify-between items-end">
@@ -270,7 +265,7 @@ const MovieCard: React.FC<MovieCardProps> = ({
                     <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-2xl">
                       {movie.title}
                     </h1>
-                    
+
                     {/* Métadonnées principales */}
                     <div className="flex flex-wrap items-center gap-3">
                       {movie.release_date && (
@@ -281,7 +276,7 @@ const MovieCard: React.FC<MovieCardProps> = ({
                           </span>
                         </div>
                       )}
-                      
+
                       {movie.vote_average && movie.vote_average > 0 && (
                         <div className={`flex items-center ${getRatingText(movie.vote_average)} ${getRatingColor(movie.vote_average)} px-3 py-1 rounded-full backdrop-blur-sm`}>
                           <IonIcon icon={star} className="mr-2" />
@@ -292,7 +287,7 @@ const MovieCard: React.FC<MovieCardProps> = ({
                       )}
                     </div>
                   </div>
-                  
+
                   {/* Bouton favori */}
                   <IonButton
                     fill="solid"
@@ -316,8 +311,8 @@ const MovieCard: React.FC<MovieCardProps> = ({
               {movie.genre_ids && movie.genre_ids.length > 0 && (
                 <div className="flex flex-wrap gap-2 justify-center">
                   {movie.genre_ids.map(genreId => (
-                    <div 
-                      key={genreId} 
+                    <div
+                      key={genreId}
                       className="bg-gradient-to-r from-yellow-500/20 to-red-500/20 text-yellow-300 px-4 py-2 rounded-full border border-yellow-400/30 backdrop-blur-sm font-semibold"
                     >
                       {genreMap[genreId] || `Genre ${genreId}`}
@@ -363,7 +358,7 @@ const MovieCard: React.FC<MovieCardProps> = ({
                       </p>
                     </div>
                   )}
-                  
+
                   {movie.original_language && (
                     <div className="bg-black/30 rounded-2xl p-4 border border-gray-600/50">
                       <label className="text-sm text-gray-400 flex items-center mb-2">
@@ -375,7 +370,7 @@ const MovieCard: React.FC<MovieCardProps> = ({
                       </p>
                     </div>
                   )}
-                  
+
                   {movie.vote_average && (
                     <div className="bg-black/30 rounded-2xl p-4 border border-gray-600/50">
                       <label className="text-sm text-gray-400 flex items-center mb-2">
@@ -387,7 +382,7 @@ const MovieCard: React.FC<MovieCardProps> = ({
                       </p>
                     </div>
                   )}
-                  
+
                   {movie.vote_count && (
                     <div className="bg-black/30 rounded-2xl p-4 border border-gray-600/50">
                       <label className="text-sm text-gray-400 flex items-center mb-2">

@@ -16,5 +16,6 @@ import { FirebaseModule } from './firebase/firebase.module';
     MoviesModule,
     CloudinaryModule,
   ],
+  
 })
 export class AppModule {}

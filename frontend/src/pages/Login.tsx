@@ -11,7 +11,6 @@ import {
   IonLabel,
   IonCard,
   IonCardContent,
-  IonText,
 } from '@ionic/react';
 import { useAuth } from '../hooks/useAuth';
 import ErrorAlert from '../components/ErrorAlert';
@@ -46,13 +45,13 @@ const Login: React.FC = () => {
           </IonTitle>
         </IonToolbar>
       </IonHeader>
-      
+
       <IonContent fullscreen className="relative overflow-hidden">
         {/* Background Elements */}
         <div className="absolute inset-0 bg-white/80"></div>
         <div className="absolute top-0 left-0 w-72 h-72 bg-purple-200 rounded-full -translate-x-1/2 -translate-y-1/2 opacity-60 blur-xl hidden md:block"></div>
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-200 rounded-full translate-x-1/3 translate-y-1/3 opacity-60 blur-xl hidden md:block"></div>
-        
+
         <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 relative z-10 w-full max-w-screen overflow-hidden">
           <div className="w-full max-w-md space-y-6 sm:space-y-8 premium-fade-in mx-auto">
             {/* Hero Header */}
@@ -80,8 +79,8 @@ const Login: React.FC = () => {
                       Adresse Email
                       <span className="text-red-500 ml-1">*</span>
                     </IonLabel>
-                    <IonItem 
-                      className={`enhanced-input rounded-xl sm:rounded-2xl ${formData.email ? 'border-blue-500' : 'border-gray-200'}`} 
+                    <IonItem
+                      className={`enhanced-input rounded-xl sm:rounded-2xl ${formData.email ? 'border-blue-500' : 'border-gray-200'}`}
                       lines="none"
                     >
                       <IonInput
@@ -102,8 +101,8 @@ const Login: React.FC = () => {
                       Mot de passe
                       <span className="text-red-500 ml-1">*</span>
                     </IonLabel>
-                    <IonItem 
-                      className={`enhanced-input rounded-xl sm:rounded-2xl ${formData.password ? 'border-blue-500' : 'border-gray-200'}`} 
+                    <IonItem
+                      className={`enhanced-input rounded-xl sm:rounded-2xl ${formData.password ? 'border-blue-500' : 'border-gray-200'}`}
                       lines="none"
                     >
                       <IonInput
@@ -118,10 +117,10 @@ const Login: React.FC = () => {
                   </div>
 
                   {/* Submit Button */}
-                  <IonButton 
-                  fill="clear"
-                    type="submit" 
-                    expand="block" 
+                  <IonButton
+                    fill="clear"
+                    type="submit"
+                    expand="block"
                     className="premium-btn mt-6 sm:mt-8 h-12 sm:h-14 rounded-xl sm:rounded-2xl shadow-lg"
                     disabled={loading}
                   >
@@ -144,8 +143,8 @@ const Login: React.FC = () => {
                       <p className="text-gray-700 font-medium mb-2 sm:mb-3 text-sm sm:text-base w-full">
                         Nouveau sur CineMatch ?
                       </p>
-                      <IonButton 
-                        fill="clear" 
+                      <IonButton
+                        fill="clear"
                         routerLink="/register"
                         className="w-full  premium-btn mt-6 sm:mt-8 h-12 sm:h-14 rounded-xl sm:rounded-2xl shadow-lg"
                       >

@@ -1,32 +1,46 @@
 import * as admin from 'firebase-admin';
 import * as bcrypt from 'bcryptjs';
+import { config } from 'dotenv';
 import * as path from 'path';
 import * as fs from 'fs';
 
 
-const serviceAccountPath = path.join(__dirname, '..', 'firebase-service-account.json');
+const envPath = path.join(process.cwd(), '.env');
+console.log(' Chemin du fichier .env:', envPath);
 
-if (!fs.existsSync(serviceAccountPath)) {
-  console.error('Fichier firebase-service-account.json non trouvé');
-  console.log(' Placez le fichier dans le dossier backend/');
-  process.exit(1);
+async function initializeFirebase() {
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+
+
+
+  if (!projectId || !privateKey || !clientEmail) {
+    throw new Error('Firebase configuration is missing in environment variables');
+  }
+
+  const formattedPrivateKey = privateKey.replace(/\\n/g, '\n');
+
+  if (admin.apps.length === 0) {
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId,
+        privateKey: formattedPrivateKey,
+        clientEmail,
+      }),
+      databaseURL: `https://${projectId}.firebaseio.com`
+    });
+  }
+
+  return admin.firestore();
 }
-
-const serviceAccount = require(serviceAccountPath);
-
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`
-});
-
-const db = admin.firestore();
 
 async function initializeAdmin() {
   try {
     console.log(' Initialisation de l\'administrateur par défaut...');
 
-    
+    const db = await initializeFirebase();
+
     const adminSnapshot = await db.collection('users')
       .where('email', '==', 'admin@cinematch.com')
       .get();
@@ -36,10 +50,8 @@ async function initializeAdmin() {
       return;
     }
 
-   
     const hashedPassword = await bcrypt.hash('Admin123!', 12);
 
-    // Créer l'admin
     const adminData = {
       nom: 'Système',
       prenom: 'Admin',
@@ -49,13 +61,15 @@ async function initializeAdmin() {
       photoUrl: '',
       isActive: true,
       role: 'admin',
-      favorites: []
+      favorites: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
 
     const adminRef = await db.collection('users').add(adminData);
     
     console.log(' Administrateur créé avec succès');
-    console.log('Email: admin@cinematch.com');
+    console.log(' Email: admin@cinematch.com');
     console.log(' Mot de passe: Admin123!');
     console.log(' ID:', adminRef.id);
 

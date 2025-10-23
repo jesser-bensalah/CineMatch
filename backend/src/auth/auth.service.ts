@@ -31,29 +31,25 @@ export class AuthService {
 
   async validateUser(payload: any): Promise<UserData | null> {
     try {
-      const userDoc = await this.firebaseService.doc('users', payload.sub).get();
-      if (!userDoc.exists) {
-        return null;
-      }
+      const user = await this.firebaseService.findById('users', payload.sub);
       
-      const userData = userDoc.data();
-      if (!userData) {
+      if (!user) {
         return null;
       }
 
       return {
-        id: userDoc.id,
-        nom: userData.nom || '',
-        prenom: userData.prenom || '',
-        age: userData.age || 0,
-        email: userData.email || '',
-        password: userData.password || '',
-        photoUrl: userData.photoUrl || '',
-        isActive: userData.isActive !== undefined ? userData.isActive : true,
-        role: userData.role || 'user',
-        favorites: userData.favorites || [],
-        createdAt: userData.createdAt || new Date().toISOString(),
-        updatedAt: userData.updatedAt || new Date().toISOString()
+        id: user.id,
+        nom: user.nom || '',
+        prenom: user.prenom || '',
+        age: user.age || 0,
+        email: user.email || '',
+        password: user.password || '',
+        photoUrl: user.photoUrl || '',
+        isActive: user.isActive !== undefined ? user.isActive : true,
+        role: user.role || 'user',
+        favorites: user.favorites || [],
+        createdAt: user.createdAt || new Date().toISOString(),
+        updatedAt: user.updatedAt || new Date().toISOString()
       };
     } catch (error) {
       console.error('Error validating user:', error);
@@ -65,19 +61,16 @@ export class AuthService {
     try {
       console.log('Starting registration for:', registerDto.email);
       
-      // Validate required fields
       if (!registerDto.email || !registerDto.password) {
         throw new BadRequestException('Email and password are required');
       }
 
-      // Check if user already exists
       const existingUser = await this.firebaseService.findOneByField('users', 'email', registerDto.email);
       if (existingUser) {
         console.log('Email already exists:', registerDto.email);
         throw new ConflictException('Email déjà utilisé');
       }
 
-      
       let photoUrl = '';
       if (photoFile) {
         console.log('Uploading photo...');
@@ -95,7 +88,6 @@ export class AuthService {
       console.log('Hashing password...');
       const hashedPassword = await bcrypt.hash(registerDto.password, 12);
 
-    
       const userData = {
         ...registerDto,
         password: hashedPassword,
@@ -107,10 +99,8 @@ export class AuthService {
         updatedAt: new Date().toISOString()
       };
 
-      
       console.log('Creating user in Firebase...');
       const userRef = await this.firebaseService.create('users', userData);
-      
       
       const payload = { 
         sub: userRef.id, 
@@ -121,7 +111,6 @@ export class AuthService {
       const token = this.jwtService.sign(payload);
       console.log('User registered successfully:', userRef.id);
 
-      
       return {
         access_token: token,
         userId: userRef.id,

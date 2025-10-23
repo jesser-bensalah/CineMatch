@@ -7,7 +7,7 @@ import { JwtAuthGuard } from './auth.guard';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   @Post('register')
   @UseInterceptors(FileInterceptor('photo'))
@@ -32,10 +32,10 @@ export class AuthController {
   @Get('validate')
   @UseGuards(JwtAuthGuard)
   async validateToken(@Request() req) {
-    
-  if (req.user.isActive === false) {
-    throw new UnauthorizedException('Compte désactivé');
-  }
+
+    if (req.user.isActive === false) {
+      throw new UnauthorizedException('Compte désactivé');
+    }
     return {
       valid: true,
       user: {
