@@ -28,6 +28,7 @@ import {
   IonTextarea,
   IonSpinner,
   IonRefresher,
+  IonAlert,
   IonRefresherContent,
   IonSelect,
   IonSelectOption,
@@ -61,6 +62,7 @@ import {
   create,
   closeCircle,
   pencil,
+  trash,
 } from 'ionicons/icons';
 import { useAuth } from '../hooks/useAuth';
 import { useMovies } from '../hooks/useMovies';
@@ -72,6 +74,8 @@ import { Movie, MatchingUser, AdminUser, AdminMovie } from '../types/movie';
 
 const Home: React.FC = () => {
   const { user, logout } = useAuth();
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [movieToDelete, setMovieToDelete] = useState<{id: string, title: string} | null>(null);
   const [presentToast] = useIonToast();
   const {
     favorites,
@@ -88,6 +92,7 @@ const Home: React.FC = () => {
     loadMatchingUsers,
     loadAdminUsers,
     loadAdminMovies,
+    deleteMovie,
     createMovie,
     toggleUserStatus,
     isFavorite,
@@ -513,21 +518,22 @@ const Home: React.FC = () => {
           )}
         </div>
 
-        {showDetailsButton && (
+       
+      </IonCardContent>
+       {showDetailsButton && (
           <div className="flex-shrink-0">
             <IonButton
               expand="block"
               fill="clear"
               size="small"
               onClick={() => openMovieDetails(movie)}
-              className="premium-btn text-sm font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md"
+              className="premium-btn text-sm font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md m-2 mt-0"
             >
               <IonIcon icon={eye} slot="start" />
               Voir détails
             </IonButton>
           </div>
         )}
-      </IonCardContent>
     </IonCard>
   );
 
@@ -1298,6 +1304,17 @@ const Home: React.FC = () => {
                                 </p>
                               )}
                             </div>
+                            <IonButton 
+                              fill='clear' 
+                              color='danger' 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setMovieToDelete({ id: movie.id, title: movie.title });
+                                setShowDeleteAlert(true);
+                              }}
+                            >
+                              <IonIcon icon={trash} slot="start" />
+                            </IonButton>
                             <IonButton
                               fill='clear'
                               onClick={(e) => {
@@ -1692,10 +1709,10 @@ const Home: React.FC = () => {
         </IonModal>
 
         {/* Modal de modification d'utilisateur */}
-        <IonModal isOpen={isEditModalOpen} onDidDismiss={() => setIsEditModalOpen(false)}>
+        <IonModal style={{'--border-radius': '20px'}} isOpen={isEditModalOpen} onDidDismiss={() => setIsEditModalOpen(false)}>
           <IonHeader>
             <IonToolbar>
-              <IonTitle>Modifier l'utilisateur</IonTitle>
+              <IonTitle className="text-center">Modifier l'utilisateur</IonTitle>
               <IonButton slot="end" fill="clear" onClick={() => setIsEditModalOpen(false)}>
                 <IonIcon icon={close} />
               </IonButton>
@@ -1761,6 +1778,47 @@ const Home: React.FC = () => {
           }}
         />
       </IonContent>
+      
+      <IonAlert
+        isOpen={showDeleteAlert}
+        onDidDismiss={() => setShowDeleteAlert(false)}
+        header={'Confirmer la suppression'}
+        message={`Êtes-vous sûr de vouloir supprimer le film "${movieToDelete?.title}" ?`}
+        buttons={[
+          {
+            text: 'Annuler',
+            role: 'cancel',
+            cssClass: 'secondary',
+          },
+          {
+            text: 'Supprimer',
+            role: 'confirm',
+            handler: async () => {
+              if (!movieToDelete) return;
+              
+              try {
+                await deleteMovie(movieToDelete.id);
+                presentToast({
+                  message: 'Film supprimé avec succès',
+                  duration: 2000,
+                  color: 'success',
+                  position: 'top'
+                });
+              } catch (error) {
+                console.error('Error deleting movie:', error);
+                presentToast({
+                  message: 'Erreur lors de la suppression du film',
+                  duration: 3000,
+                  color: 'danger',
+                  position: 'top'
+                });
+              } finally {
+                setMovieToDelete(null);
+              }
+            }
+          }
+        ]}
+      />
     </IonPage>
   );
 };

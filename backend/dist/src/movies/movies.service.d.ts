@@ -68,6 +68,10 @@ export declare class MoviesService {
     getAdminMovies(): Promise<{
         id: string;
     }[]>;
+    deleteMovie(id: string): Promise<{
+        success: boolean;
+        message: string;
+    }>;
     updateMovie(id: string, updateMovieDto: CreateMovieDto, posterFile?: Express.Multer.File): Promise<{
         id: string;
     }>;

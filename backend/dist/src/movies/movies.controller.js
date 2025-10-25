@@ -45,6 +45,10 @@ let MoviesController = class MoviesController {
     async getAdminMovies() {
         return this.moviesService.getAdminMovies();
     }
+    async deleteMovie(id) {
+        await this.moviesService.deleteMovie(id);
+        return { message: 'Movie deleted successfully' };
+    }
     async updateMovie(id, body, posterFile, req) {
         let updateData = {};
         if (body.movie) {
@@ -159,12 +163,21 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], MoviesController.prototype, "getMatchingUsers", null);
 __decorate([
-    (0, common_1.UseGuards)(auth_guard_1.JwtAuthGuard),
+    (0, common_1.UseGuards)(auth_guard_1.AdminGuard),
     (0, common_1.Get)('admin/list'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], MoviesController.prototype, "getAdminMovies", null);
+__decorate([
+    (0, common_1.UseGuards)(auth_guard_1.AdminGuard),
+    (0, common_1.Delete)('admin/:id'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.NO_CONTENT),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], MoviesController.prototype, "deleteMovie", null);
 __decorate([
     (0, common_1.UseGuards)(auth_guard_1.AdminGuard),
     (0, common_1.Patch)('admin/:id'),

@@ -69,10 +69,18 @@ export class MoviesController {
   }
 
   // Route accessible à tous les utilisateurs authentifiés pour voir les films admin
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AdminGuard)
   @Get('admin/list')
   async getAdminMovies() {
     return this.moviesService.getAdminMovies();
+  }
+
+  @UseGuards(AdminGuard)
+  @Delete('admin/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteMovie(@Param('id') id: string) {
+    await this.moviesService.deleteMovie(id);
+    return { message: 'Movie deleted successfully' };
   }
 
   // Routes Admin uniquement

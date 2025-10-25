@@ -21,6 +21,7 @@ interface UseMoviesReturn {
 
   loadAdminUsers: () => Promise<void>;
   loadAdminMovies: () => Promise<void>;
+  deleteMovie: (movieId: string) => Promise<void>;
   createMovie: (movieData: any, posterFile?: File) => Promise<AdminMovie>;
   toggleUserStatus: (userId: string) => Promise<void>;
 
@@ -251,6 +252,20 @@ export const useMovies = (): UseMoviesReturn => {
     }
   };
 
+  const deleteMovie = async (movieId: string) => {
+    try {
+      await adminAPI.deleteMovie(movieId);
+      // Remove the movie from the local state
+      setAdminMovies(prevMovies => prevMovies.filter(movie => movie.id.toString() !== movieId.toString()));
+      // Also remove from popular movies if it exists there
+      setPopularMovies(prevMovies => prevMovies.filter(movie => movie.id.toString() !== movieId.toString()));
+    } catch (error) {
+      console.error('Error deleting movie:', error);
+      setError('Failed to delete movie');
+      throw error; // Re-throw to handle in the component
+    }
+  };
+
   const createMovie = async (movieData: any, posterFile?: File) => {
     setLoading(true);
     try {
@@ -345,6 +360,7 @@ export const useMovies = (): UseMoviesReturn => {
     loadMatchingUsers,
     loadAdminUsers,
     loadAdminMovies,
+    deleteMovie,
     createMovie,
     toggleUserStatus,
 

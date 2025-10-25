@@ -228,6 +228,21 @@ export class MoviesService {
     }
   }
 
+  async deleteMovie(id: string) {
+    const db = this.firebaseService.getFirestore();
+    const movieRef = db.collection('movies').doc(id);
+    const movieDoc = await movieRef.get();
+
+    if (!movieDoc.exists) {
+      throw new NotFoundException('Movie not found');
+    }
+
+    // Delete the movie
+    await movieRef.delete();
+    
+    return { success: true, message: 'Movie deleted successfully' };
+  }
+
   async updateMovie(id: string, updateMovieDto: CreateMovieDto, posterFile?: Express.Multer.File) {
     const db = this.firebaseService.getFirestore();
     const movieRef = db.collection('movies').doc(id);

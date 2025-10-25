@@ -183,6 +183,15 @@ let MoviesService = class MoviesService {
             throw error;
         }
     }
+    async deleteMovie(id) {
+        const movieRef = this.firebaseService.doc('movies', id);
+        const movieDoc = await movieRef.get();
+        if (!movieDoc.exists) {
+            throw new common_1.NotFoundException('Movie not found');
+        }
+        await movieRef.delete();
+        return { success: true, message: 'Movie deleted successfully' };
+    }
     async updateMovie(id, updateMovieDto, posterFile) {
         const db = this.firebaseService.getFirestore();
         const movieRef = db.collection('movies').doc(id);

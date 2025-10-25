@@ -30,6 +30,9 @@ export declare class MoviesController {
     getAdminMovies(): Promise<{
         id: string;
     }[]>;
+    deleteMovie(id: string): Promise<{
+        message: string;
+    }>;
     updateMovie(id: string, body: any, posterFile: Express.Multer.File, req: Request): Promise<{
         id: string;
     }>;
